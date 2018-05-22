@@ -32,7 +32,7 @@ Open C:\home\GitHub\HDBCellSCAN\hdbscan_test20171017.py and run this code.
 If you face any errors of missing package, install it from Anaconda.
  
 ---- Run HDBCellSCAN ---
-7. Start MATLAB, move to the unzipped downloaded folder. 
+7. Start MATLAB, move to <RootDir>. 
 
 8. In the command prompt of MATLAB, type
 >>pyversion
