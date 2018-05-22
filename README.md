@@ -2,8 +2,8 @@
 Hierarchical density-based clustering method to detect ROIs in Ca imaging data
 <img src="https://github.com/hamaguchikosuke/HDBCellSCAN/blob/master/CaGui/figures/HDBCellSCAN_ROIs.png" width=400px>
 
-# I. History
-HDBCellSCAN is an algorithm to detect ROIs based on the idea that within an ROI, pixels must have correlated fluorescent signals. Thus, by assigning virtual distance as 1-correlation to nearest-neighbor pixels, ROI detection problem becomes clustering problem embedded in the noise. To make the complete pipeline of data analysis, codes from Suite2P (image registration and neuropil mask code) were used. Spike deconvolution is based on Fast-Oopsi. 
+# I. Introduction
+HDBCellSCAN is an algorithm to detect ROIs based on the idea that within an ROI, pixels must have correlated fluorescent signals. Thus, by assigning virtual distance as 1-correlation between nearest-neighbor pixels, ROI detection problem becomes clustering problem embedded in the noise. To make the complete pipeline of data analysis, large portion of Suite2P (image registration and signal extraction) were used. Spike deconvolution is based on Fast-Oopsi. Thus, this package of HDBCellSCAN can 1) read large Tiff (>4GB) stacks, 2) register image, 3) detect ROIs, 4) extract fluorescent signal, and 5) estimate action potential events.
 
 # II. Installation. 
 **Requirement**
