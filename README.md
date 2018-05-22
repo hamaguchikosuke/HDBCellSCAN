@@ -1,9 +1,9 @@
 # HDBCellSCAN
-Hierarchical density-based clustering method to detect ROIs in Ca imaging data
+Hierarchical density-based clustering method to detect ROIs in two-photon Ca imaging data
 <img src="https://github.com/hamaguchikosuke/HDBCellSCAN/blob/master/CaGui/figures/HDBCellSCAN_ROIs.png" width=400px>
 
 # I. Introduction
-HDBCellSCAN is an algorithm to detect ROIs based on the idea that within an ROI, pixels must have correlated fluorescent signals. Thus, by assigning virtual distance as 1-correlation between nearest-neighbor pixels, ROI detection problem becomes clustering problem embedded in the noise. To provide a complete pipeline of data analysis, large portion of Suite2P (image registration and signal extraction) were used. Spike deconvolution is based on Fast-Oopsi. Thus, this package of HDBCellSCAN provides the following functions; 1) read large Tiff (>4GB) stacks, 2) register images (rigid body), 3) detect ROIs (HDBCellSCAN), 4) GUI to semi-automatically filter ROIs, 5) extract fluorescent signal, and 6) estimate action potential events. Our custamized GUI is equipped with movie player to check raw data, Support-Vector Machine for ROI classification, and ROI splitting. These pipelined processes can be separately run through HDBCellSCAN_Master.m.
+HDBCellSCAN is an algorithm to detect ROIs based on the idea that within an ROI, pixels must have correlated fluorescent signals. Thus, by assigning virtual distance as 1-correlation between nearest-neighbor pixels, ROI detection problem becomes clustering problem embedded in the noise. To provide a complete pipeline of data analysis, large portion of [Suite2P](https://github.com/cortex-lab/Suite2P), such as image registration and signal extraction codes were used. Spike deconvolution is based on Fast-Oopsi. Thus, this package of HDBCellSCAN provides a complete set of functions to analyze Ca image data; 1) read large Tiff (>4GB) stacks, 2) register images (rigid body), 3) detect ROIs (HDBCellSCAN), 4) GUI to semi-automatically filter ROIs, 5) extract fluorescent signal, and 6) estimate action potential events. Our custamized GUI is equipped with movie player to check raw data, Support-Vector Machine for ROI classification, and ROI splitting. These pipelined processes can be separately run through HDBCellSCAN_Master.m.
 
 # II. Installation. 
 **Requirement**
