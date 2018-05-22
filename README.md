@@ -18,14 +18,14 @@ older versions were not fully tested.
 
 ### Install Python and hdbscan ###
 
-1. Download Anaconda Navigator and install. 
+1. Download [Anaconda](https://www.anaconda.com/download/) and install. If you use 64bit OS, install 64bit version. 
 
-2. Open Anaconda Navigator. Make a new environment. 
+2. Open Anaconda. Make a new environment. 
    Put a name like "CaImaging" for that environment.
 
 3. Open terminal by right-clicking the triangle button in "CaImaging" environment.  
    
-  Type 
+Type 
 \>> conda install -c conda-forge hdbscan
 
 During the installation, you can find the environment location, such as 
@@ -36,14 +36,14 @@ C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages
 
 Please write down this path and add python path (see How2Use_HDBCellSCAN.m) so that MATLAB can reach to HDBSCAN packages. 
 
-4. Go to Github website 
+4. Go to Github [HDBCellSCAN](https://github.com/hamaguchikosuke/HDBCellSCAN) page.
 
 5. Download HDBCellScan package and unzip the downloaded folder.
 Hereafter, I assume that HDBCellSCAN is extracted in \<RootDir\>=C:\home\GitHub\HDBCellSCAN
 
 6. To confirm HDBSCAN package itself is working in Python, install and launch Spyder from Anaconda. 
-Open C:\home\GitHub\HDBCellSCAN\hdbscan_test20171017.py and run this code.
-If you face any errors of missing package, install it from Anaconda.
+Open C:\home\GitHub\HDBCellSCAN\hdbscan_test20171017.py and run each section of the code.
+You may face errors of missing package, then please install it from Anaconda.
  
 ### Run HDBCellSCAN ###
 7. Start MATLAB, move to \<RootDir\>. 
