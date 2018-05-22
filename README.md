@@ -1,5 +1,6 @@
 # HDBCellSCAN
 Hierarchical density-based clustering method to detect ROIs in Ca imaging data
+![alt text](https://github.com/hamaguchikosuke/HDBCellSCAN/blob/master/CaGui/figures/HDBCellSCAN_ROIs.png "HDBCellSCAN detected ROIs")
 
 # I. History
 HDBCellSCAN was initially developped as a customized version of Suite2P. Later, new ROI detection algorithm HDBCellSCAN was implemented by Kosuke Hamaguchi. Spike deconvolution is based on Fast-Oopsi. 
