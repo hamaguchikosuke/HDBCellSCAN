@@ -1,0 +1,25 @@
+1. Download Anaconda Navigator and install. 
+
+2. Open Anaconda Navigator. Make a new environment. 
+   Put a name like "CaImaging" for that environment.
+
+3. Open terminal by right-clicking the triangle button in "CaImaging" environment.  
+   
+  Type 
+>> conda install -c conda-forge hdbscan
+
+During the installation, you can find the environment location, such as 
+C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
+
+The HDBSCAN package is in 
+C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages
+
+Please write down this path so that MATLAB can reach to HDBSCAN packages. 
+
+4. Go to Github website 
+
+5. Download HDBCellScan package and unzip the downloaded folder.
+
+6. Start MATLAB, move to the unzipped downloaded folder. 
+
+7. 
