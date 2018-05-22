@@ -121,7 +121,7 @@ classdef mlttiff < handle
             if isempty(already_read_ind)
                 index = max(index,ceil(obj.MaxSlice/2)); % in case hitting lower bound
                 index = min(index,obj.TotalNSeries-ceil(obj.MaxSlice/2)); % in case hitting upper bound
-                load_index = [-ceil(obj.MaxSlice/2):floor(obj.MaxSlice/2)]+index;
+                load_index = [-floor(obj.MaxSlice/2):ceil(obj.MaxSlice/2)]+index;
                 load_index = load_index( load_index>0 & load_index <= obj.TotalNSeries);
                 load_index = load_index(1:obj.MaxSlice);
                 obj.set_buffer(load_index);

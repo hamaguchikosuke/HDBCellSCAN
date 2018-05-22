@@ -44,7 +44,7 @@ function pyS = matsparse_2_pysparse(X)
 % % compare 
 % full(S)
 % nparray2mat( pyS.toarray)
-%% 
+%%          
 
 if issparse(X)
     % OK
@@ -53,7 +53,7 @@ else
 end
 
 [I,J,S]=find(X);
-inputargs = pyargs('shape',py.tuple({size(X,1),size(X,2)}));
+inputargs = pyargs('shape',py.tuple({py.int(size(X,1)),py.int(size(X,2))}));
 S = py.scipy.array(S');
 I = py.scipy.array(uint32(I'-1));
 J = py.scipy.array(uint32(J'-1));

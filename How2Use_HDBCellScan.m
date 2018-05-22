@@ -1,15 +1,21 @@
 %% setup path to matlab and python 
-addpath(genpath('C:\home\GitHub\HDBCellScan\HDBCellScan')) % path to HDBCellScan folder
+addpath(genpath('C:\home\GitHub\HDBCellScan')) % path to HDBCellScan folder
 
+P=pyversion;
+if isempty(P)
+    errordlg('Python is not found. Install Python or set PATH so that Windows can find it');
+end
 % Before run this code, please check whether you have installed HDBSCAN
 % toolbox through Anaconda. Then, please find folder that includes hdbscan,
 % such as 
-python_path = 'C:\Users\hamag\.conda\envs\khtest\Lib\site-packages';
+
+% python_path = 'C:\Users\hamag\.conda\envs\khtest\Lib\site-packages'; 
+python_path = 'C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages'
 P = py.sys.path;
 append(P,python_path);
 
 %% First, setup database m-file 
-edit('C:\home\GitHub\HDBCellScan\HDBCellScan\TestData\make_db_B6N792');
+edit('C:\home\GitHub\HDBCellScan\TestData\make_db_B6N792');
 %% Load the database m-file from master control 
 HDBCellScan_Master_v03; 
 

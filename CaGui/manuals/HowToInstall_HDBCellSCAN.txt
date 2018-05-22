@@ -1,3 +1,9 @@
+To run HDBCellSCAN, you need
+ MATLAB 2017b or higher 
+ Python 3.5 or higher and hdbscan package 
+
+---- Install Python and hdbscan ----
+
 1. Download Anaconda Navigator and install. 
 
 2. Open Anaconda Navigator. Make a new environment. 
@@ -14,12 +20,52 @@ C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
 The HDBSCAN package is in 
 C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages
 
-Please write down this path so that MATLAB can reach to HDBSCAN packages. 
+Please write down this path and add python path (see How2Use_HDBCellSCAN.m) so that MATLAB can reach to HDBSCAN packages. 
 
 4. Go to Github website 
 
 5. Download HDBCellScan package and unzip the downloaded folder.
+Hereafter, I assume that HDBCellSCAN is extracted in <RootDir>=C:\home\GitHub\HDBCellSCAN
 
-6. Start MATLAB, move to the unzipped downloaded folder. 
+6. To confirm HDBSCAN package itself is working in Python, install and launch Spyder from Anaconda. 
+Open C:\home\GitHub\HDBCellSCAN\hdbscan_test20171017.py and run this code.
+If you face any errors of missing package, install it from Anaconda.
+ 
+---- Run HDBCellSCAN ---
+7. Start MATLAB, move to the unzipped downloaded folder. 
 
-7. 
+8. In the command prompt of MATLAB, type
+>>pyversion
+to confirm you have access to python from MATLAB. If it returns empty, you need to install Python or need to set PATH variable (see trouble shooting). 
+
+9. Open an example file, <RootDir>\How2Use_HDBCellScan.m
+ You can see how to operate HDBCellScan in this code.
+
+
+====================== Trouble shooting in Windows============================
+
+--- pyversion returns empty ----
+
+I think recent Anaconda does not recommend to set PATH during the installation. 
+You need to set PATH variable by going to 
+My Computer -> Properties -> Advanced -> Environment Variables and edit "Path" variable to add Python Path i.e. 'C:\<python_library>'
+
+Another possibility is the version compatibility.
+
+Below is the comments from https://jp.mathworks.com/matlabcentral/answers/229501-matlab-do-not-recongnize-pyversion
+
+The "pyversion" function was introduced in MATLAB R2014b and cannot be used with any prior release. MATLAB supports versions 2.7, 3.3 and 3.4 of Python.
+Assuming the error occurred in MATLAB R2014b or later releases, there can be two possible reasons for this issue:
+
+Python library was installed but the executable path was not set: In this case you can use the following commands to set the executable path:
+Go to My Computer -> Properties -> Advanced -> Environment Variables and edit "Path" variable to add Python Path i.e. 'C:\<python_library>'
+
+Python library is not installed: In this case reinstalling the python libraries and setting the "Path" variable might help in fixing the issue.
+It might also be helpful to look at the link below describing some errors with Python integration: Undefined variable py or Function py.command
+
+--- svmtrain returns an error ----
+Note that I use libsvm (https://www.csie.ntu.edu.tw/~cjlin/libsvm/) to run SVM instead of matlab's toolbox. 
+This is in part historical reason but also to avoid unnecessary dependence of pricy toolboxes in MATLAB. 
+In my GitHub commit, svmtrain and svmpredict are already compiled for Windows 64bit, but not for the other environments (since I do not access to Mac/Linux environment).
+Please compile them using make.m in libsvm folder.
+

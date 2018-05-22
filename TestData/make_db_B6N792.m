@@ -52,7 +52,8 @@ db(i).RoughMeanTimeInBFile = NaN; % Give me one time point when the scanning was
 
 % 
 % For 30FPS imaging
-ops0.nFramesAvgForSVD       = 25; 
+ops0.nFramesAvgForSVD       = 1; % Because uploaded file is already x20 averaged. 
+% ops0.nFramesAvgForSVD       = 25; % normally, select this.
 % For multiplane imaging, 5FPS
 % ops0.nFramesAvgForSVD       = 6; 
 
