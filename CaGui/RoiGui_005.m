@@ -2091,9 +2091,10 @@ function pb_movie_display_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_movie_display (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-h.dat.graph.map = 5;
-h=redraw_meanimg(h);
+ 
+% h.dat.graph.map = 5;
+% h=redraw_meanimg(h); 
+h=redraw_movie(hObject,eventdata,h);
 guidata(hObject,h);
 
 
