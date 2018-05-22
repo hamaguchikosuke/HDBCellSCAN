@@ -56,8 +56,10 @@ to confirm you have access to python from MATLAB. If it returns empty, you need 
 9. Open an example file, <RootDir>\How2Use_HDBCellScan.m
  You can see how to operate HDBCellScan in this code.
 
+# III. Sample Data
+[20 frame averaged data](https://drive.google.com/open?id=1AZ6vBrWiMOHIOn4_DpTgvZkw6IhVUt4u)
 
-# III. Trouble shooting (in Windows)
+# IV. Trouble shooting (in Windows)
 
 ### 1. pyversion returns empty 
 
