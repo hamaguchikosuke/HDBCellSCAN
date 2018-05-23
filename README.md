@@ -13,6 +13,8 @@ To run HDBCellSCAN, I recommend
 
 **Python 3.5 or higher** and hdbscan package 
 
+**[Suite2P](https://github.com/cortex-lab/Suite2P)** Download and add path to it including subdirectories.  
+
 older versions were not fully tested. 
 
 ### Install Python and hdbscan ###
