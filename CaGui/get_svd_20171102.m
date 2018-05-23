@@ -12,7 +12,7 @@ for ii = 1:numel(ops1)
     end
     
     if ops1{ii}.getROIs || getOr(ops1{ii}, {'writeSVDroi'}, 0)
-        [ops1{ii}, U, Sv]    = get_svdForROI_kh(ops1{ii}); % -> SVDroi_<mouse_name>_<date>_plane<#>_ch<#>
+        [ops1{ii}, U, Sv]    = get_svdForHDBSCAN(ops1{ii}); % -> SVDroi_<mouse_name>_<date>_plane<#>_ch<#>
     end
    
 end

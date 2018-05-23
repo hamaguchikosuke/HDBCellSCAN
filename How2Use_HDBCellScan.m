@@ -1,5 +1,6 @@
 %% setup path to matlab and python 
 addpath(genpath('C:\home\GitHub\HDBCellScan')) % path to HDBCellScan folder
+addpath(genpath('C:\home\GitHub\suite2P')) % path to suite2P 
 
 P=pyversion;
 if isempty(P)

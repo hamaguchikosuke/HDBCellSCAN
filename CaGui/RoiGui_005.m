@@ -39,12 +39,12 @@ guidata(hObject, h);
 % uiwait(h.figure1);
 
 function h=init_icons(hObject,eventdata,h)
-h.icons.SVM_BW  =imread('C:\home\matlab_svn\Suite2P\KHcodes\icons\SVM_Black_26x26.png');
-h.icons.SVM_Color =imread('C:\home\matlab_svn\Suite2P\KHcodes\icons\SVM_26x26.png');
-h.icons.ROICircle_BW=imread('C:\home\matlab_svn\Suite2P\KHcodes\icons\ROICircle_25x26_Gray.png');
-h.icons.ROICircle_Color=imread('C:\home\matlab_svn\Suite2P\KHcodes\icons\ROICircle_25x26_Color.png');
-h.icons.CellDisplay_BW=imread('C:\home\matlab_svn\Suite2P\KHcodes\icons\CellDisplay_25x26_Gray.png');
-h.icons.CellDisplay_Color=imread('C:\home\matlab_svn\Suite2P\KHcodes\icons\CellDisplay_25x26_Color.png');
+h.icons.SVM_BW  =imread('SVM_Black_26x26.png');
+h.icons.SVM_Color =imread('SVM_26x26.png');
+h.icons.ROICircle_BW=imread('ROICircle_25x26_Gray.png');
+h.icons.ROICircle_Color=imread('ROICircle_25x26_Color.png');
+h.icons.CellDisplay_BW=imread('CellDisplay_25x26_Gray.png');
+h.icons.CellDisplay_Color=imread('CellDisplay_25x26_Color.png');
 
 
 function h=init_movie_timer(hObject,eventdata,h)
@@ -2087,7 +2087,7 @@ show_corr_roi(handles);
 % guidata(hObject,handles);
 
 % --- Executes on button press in pb_movie_display.
-function pb_movie_display_Callback(hObject, eventdata, handles)
+function pb_movie_display_Callback(hObject, eventdata, h)
 % hObject    handle to pb_movie_display (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

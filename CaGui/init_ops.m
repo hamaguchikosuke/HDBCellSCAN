@@ -1,11 +1,6 @@
 function ops0 = init_ops(ops0)
-%%
-ops0.toolbox_path = 'C:\home\matlab_svn\Suite2P';
-if exist(ops0.toolbox_path, 'dir')
-    addpath(genpath(ops0.toolbox_path)) % add local path to the toolbox
-else
-    error('toolbox_path does not exist, please change toolbox_path');
-end
+% %%
+
 
 % mex -largeArrayDims SpikeDetection/deconvL0.c (or .cpp) % MAKE SURE YOU COMPILE THIS FIRST FOR DECONVOLUTION
 

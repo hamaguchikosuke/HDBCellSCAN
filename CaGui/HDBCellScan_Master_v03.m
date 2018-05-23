@@ -54,20 +54,14 @@ function HDBCellScan_Master_v03_OpeningFcn(hObject, eventdata, handles, varargin
 
 % Choose default command line output for HDBCellScan_Master_v03
 handles.output = hObject;
-
-toolbox_path = 'C:\home\matlab_svn\Suite2P';
-if exist(toolbox_path, 'dir')
-	addpath(genpath(toolbox_path)) % add local path to the toolbox
-else
-	error('toolbox_path does not exist, please change toolbox_path');
-end
-
-handles.toolbox_path = 'C:\home\matlab_svn\suite2P\';
-if exist(handles.toolbox_path, 'dir')
-	addpath(genpath(handles.toolbox_path)) % add local path to the toolbox
-else
-	error('toolbox_path does not exist, please change toolbox_path');
-end
+% 
+% toolbox_path = 'C:\home\matlab_svn\Suite2P';
+% if exist(toolbox_path, 'dir')
+% 	addpath(genpath(toolbox_path)) % add local path to the toolbox
+% else
+% 	error('toolbox_path does not exist, please change toolbox_path');
+% end
+% 
 
 
 
@@ -163,7 +157,7 @@ function [ops,handles]=scan_db(ops,db,handles)
 
 ops = init_ops(ops);
 
-ops=build_ops3(db,ops);
+ops=build_ops_for_HDBCellSCAN(db,ops);
 
 % check registered tiff file exists
 ops.process.RegTiffDone = true;
