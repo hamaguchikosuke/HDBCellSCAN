@@ -12,8 +12,8 @@ end
 % toolbox through Anaconda. Then, please find folder that includes hdbscan,
 % such as 
 
-% python_path = 'C:\Users\hamag\.conda\envs\khtest\Lib\site-packages'; 
-python_path = 'C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages'
+python_path = 'C:\Users\hamag\.conda\envs\khtest\Lib\site-packages'; 
+% python_path = 'C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages'
 P = py.sys.path;
 append(P,python_path);
 
@@ -47,7 +47,7 @@ HDBCellScan_Master_v03;
 % 
 % Third, select the first three (ImageReg, GetRoi, GetSignal) analysis and press [RUN].
 % You can choose 
-% Overwrite: re-do analysis fromthe beginning.
+% Overwrite: re-do analysis from the beginning.
 % Keep:      skip the analysis if previously analyzed file exist.
 % Cancel:    Abort analysis.
 % 
