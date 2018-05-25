@@ -34,6 +34,7 @@ C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
 
 The hdbscan package is in 
 C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages
+
 Please write down this path and add python path in your code (see How2Use_HDBCellSCAN.m) so that MATLAB can reach to hdbscan packages. 
 
 ### Add environemnt Path ###
@@ -42,12 +43,13 @@ You need to set PATH variable by going to
 My Computer -> Properties -> Advanced -> Environment Variables and edit "Path" variable to add Python.
 
 Add the following two PATH to your environment; 
-First, path to python.exe
+
+**First**, path to python.exe
 which is same as the location of the environment. For examle 
 
 C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
 
-Second, path to DLLs that python uses.
+**Second**, path to DLLs that python uses.
 If you use Anaconda, it should be something like
 C:\ProgramData\Anaconda3\Library\bin 
 
