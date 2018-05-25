@@ -37,7 +37,7 @@ C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages
 
 Please write down this path and add python path in your code (see How2Use_HDBCellSCAN.m) so that MATLAB can reach to hdbscan packages. 
 
-### Add environemnt Path ###
+### Add environment Path ###
 Recent Anaconda does not recommend to set PATH during the installation because different environment uses different version of python.
 You need to set PATH variable by going to 
 My Computer -> Properties -> Advanced -> Environment Variables and edit "Path" variable to add Python.
@@ -51,6 +51,7 @@ C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
 
 **Second**, path to DLLs that python uses.
 If you use Anaconda, it should be something like
+
 C:\ProgramData\Anaconda3\Library\bin 
 
 ### Download HDBCellSCAN ###
@@ -92,8 +93,6 @@ C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
 2) path to DLLs that python uses.
 If you use Anaconda, it should be something like
 C:\ProgramData\Anaconda3\Library\bin 
-
-1) Path to python itself. This should be Path i.e. 'C:\<python_library>'
 
 Another possibility is the version compatibility.
 (please check https://jp.mathworks.com/matlabcentral/answers/229501-matlab-do-not-recongnize-pyversion)
