@@ -34,9 +34,24 @@ C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
 
 The hdbscan package is in 
 C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages
+Please write down this path and add python path in your code (see How2Use_HDBCellSCAN.m) so that MATLAB can reach to hdbscan packages. 
 
-Please write down this path and add python path (see How2Use_HDBCellSCAN.m) so that MATLAB can reach to hdbscan packages. 
+### Add environemnt Path ###
+Recent Anaconda does not recommend to set PATH during the installation because different environment uses different version of python.
+You need to set PATH variable by going to 
+My Computer -> Properties -> Advanced -> Environment Variables and edit "Path" variable to add Python.
 
+Add the following two PATH to your environment; 
+First, path to python.exe
+which is same as the location of the environment. For examle 
+
+C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
+
+Second, path to DLLs that python uses.
+If you use Anaconda, it should be something like
+C:\ProgramData\Anaconda3\Library\bin 
+
+### Download HDBCellSCAN ###
 4. Go to Github [HDBCellSCAN](https://github.com/hamaguchikosuke/HDBCellSCAN) page.
 
 5. Download HDBCellScan package and unzip the downloaded folder.
@@ -63,10 +78,20 @@ to confirm you have access to python from MATLAB. If it returns empty, you need 
 # IV. Trouble shooting (in Windows)
 
 ### 1. pyversion returns empty 
+### 2. hdbscan_test20171017.py worked in Spyder, but in MATLAB, python returns an error.
 
-Recent Anaconda does not recommend to set PATH during the installation. 
-You need to set PATH variable by going to 
-My Computer -> Properties -> Advanced -> Environment Variables and edit "Path" variable to add Python Path i.e. 'C:\<python_library>'
+These two are something to do with the PATH setting and most of the installation error is related to this. 
+Please make sure that the following two PATH is added to your environment; 
+1) path to python.exe
+which is same as the location of the environment. For examle 
+
+C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging
+
+2) path to DLLs that python uses.
+If you use Anaconda, it should be something like
+C:\ProgramData\Anaconda3\Library\bin 
+
+1) Path to python itself. This should be Path i.e. 'C:\<python_library>'
 
 Another possibility is the version compatibility.
 (please check https://jp.mathworks.com/matlabcentral/answers/229501-matlab-do-not-recongnize-pyversion)
