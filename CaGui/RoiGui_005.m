@@ -1601,8 +1601,8 @@ else
 end
 
 set(h.plot_fluorescence_FCell,'XData',1:NT,'YData',newydata,'Color','r');
-max_y = max([max_y;newydata]);
-min_y = min([min_y;newydata]);
+max_y = max([max_y;newydata(:)]);
+min_y = min([min_y;newydata(:)]);
 dy = max_y-min_y;
 if dy==0,    dy=1;end
 yl(1) = min_y-0.1*dy;
