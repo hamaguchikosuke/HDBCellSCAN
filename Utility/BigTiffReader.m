@@ -94,6 +94,21 @@ else
 end
 
 
+if W~=H % non-square image, somehow failed to read. Reply on loadFramesBuff2
+    if nargin ~=~isempty(index)
+        firstIdx=index(1);
+        lastIdx = index(end);
+        stride = index(2)-index(1);
+    else
+        firstIdx = [];
+        lastIdx = [];
+        stride = [];
+    end
+    F=loadFramesBuff2(f,firstIdx, lastIdx, stride, ind_i,ind_j);
+else
+    
+
+
 %%
 
 switch info(1).ByteOrder
@@ -155,3 +170,4 @@ end
 
  fclose(fID);
 if ShowProgressBar, close(waitH); end
+end
