@@ -7,7 +7,7 @@ else
 end
 
 Ly = ops.Ly;
-Lx = ops.Ly;
+Lx = ops.Lx;
 bitspersamp = 16;
 
 frewind(fid);

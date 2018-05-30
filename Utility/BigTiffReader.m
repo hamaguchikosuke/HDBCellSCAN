@@ -95,6 +95,7 @@ end
 
 
 if W~=H % non-square image, somehow failed to read. Reply on loadFramesBuff2
+    fprintf('non-square image: call loadFramesBuff2\n')
     if nargin ~=~isempty(index)
         firstIdx=index(1);
         lastIdx = index(end);

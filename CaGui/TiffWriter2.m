@@ -1,6 +1,6 @@
 function TiffWriter2(image,fname,bitspersamp,writeopt)
 
-if isempty(writeopt)
+if nargin<=3
     writeopt = 'w'; %  open Tiff file for writing; discard existing contents.
 %     writeopt = 'a'; % open or create Tiff file for writing; created files will 
                     % be in 32-bit Tiff format; any existing file format will
@@ -21,9 +21,9 @@ if bitspersamp==32
     tagstruct.BitsPerSample = 32;
 end
 tagstruct.SamplesPerPixel = 1;
-tagstruct.RowsPerStrip = 256;
+tagstruct.RowsPerStrip = size(image,1);
 tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-tagstruct.Software = 'MATLAB';
+tagstruct.Software = 'TiffWriter2';
 t.setTag(tagstruct);
 t.write(image(:,:,1));
 for i=2:size(image,3)
