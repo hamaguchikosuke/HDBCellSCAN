@@ -246,7 +246,7 @@ h = buildLambdaValue(h);
     
 % to init image in left/right axes
 axes(h.axes_left); 
-h.left_imageH=imagesc(h.dat.graph.mimg(:,:,h.dat.graph.map)); 
+h.left_imageH=imshow(h.dat.graph.mimg(:,:,h.dat.graph.map)); 
 colormap('gray'); axis off
 % set(h.left_imageH,'CDataMapping','direct');
 
