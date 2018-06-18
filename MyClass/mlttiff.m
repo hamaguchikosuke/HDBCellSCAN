@@ -51,9 +51,10 @@ classdef mlttiff < handle
                  obj.filenames = f;
                  obj.nSeries = zeros(1,length(f));
                  fprintf('Checking tiff pages (mlttiff)...')
-                 for ii=1:length(f)
+                 for ii=1:length(f)               
                      obj.nSeries(ii)=nFramesKH(f{ii});
                      fprintf('%d,',obj.nSeries(ii));
+%                      pause(0.5);
                  end
                  fprintf('done\n')
                  tiff = Tiff(f{1}, 'r');

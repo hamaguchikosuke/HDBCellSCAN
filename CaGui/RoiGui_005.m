@@ -536,7 +536,9 @@ function pb_saveprocfile_Callback(hObject, eventdata, h)
 if ~isempty(strfind(h.dat.filename,'Spk'))
     filename = h.dat.filename;
 else
-    filename = [h.dat.filename(1:end-4) '_proc.mat'];
+    [filepath,filename,ext]=fileparts(h.dat.filename);
+    filename = strrep(filename,'_proc','');
+    filename = fullfile(filepath,[filename,'_proc.mat']);
 end
 fprintf('Saving results %s ...\n',filename)
 h.dat.F.trace = [];
@@ -2984,21 +2986,29 @@ function pb_UpdateSVMPrediction_Callback(hObject, eventdata, h)
 % handles    structure with handles and user data (see GUIDATA)
 
 labels = h.dat.cl.svm_class;
-teacher_ind = (labels~=0);
+
 % labels = labels(teacher_ind);
-unique_classes = unique(labels); unique_classes(unique_classes==0)=[];
 
 svm_axis = {'Compactness','npix','Eccentricity','Solidity','V','skewF'};
 data = h.dat.cl.statTBL(:,svm_axis);
 
 if isfield(h.dat.cl,'svm_teacher_label')
-labels = cat(1,labels,h.dat.cl.svm_teacher_label);
+    loaded_labels = h.dat.cl.svm_teacher_label;
+    labels = cat(1,labels,loaded_labels);
+else
+    loaded_labels= [];
 end
-if isfield(h.dat.cl,'svm_teacher_data')
-data = cat(1,data,h.dat.cl.svm_teacher_data);
-end
-data = zscore(double(table2array(data)),0,1);
 
+unique_classes = unique(labels); unique_classes(unique_classes==0)=[];
+teacher_ind = (labels~=0);
+if isfield(h.dat.cl,'svm_teacher_data')
+    loaded_teacher_data = h.dat.cl.svm_teacher_data;
+    data = cat(1,data,loaded_teacher_data);
+else
+    loaded_teacher_data= [];
+end
+N_imported_data = length(loaded_labels);
+data = zscore(double(table2array(data)),0,1);
 
 % data= double(data(:,teacher_ind));
 
@@ -3011,14 +3021,17 @@ for cc=unique_classes(:)'
     h.dat.cl.svmmodel(cc).param = svmtrain(2*train_label(teacher_ind)-1,...
         data(teacher_ind,:), '-c 400 -g 0.01');
     
-    [predict_label, accuracy, dec_values] = svmpredict(randn(h.dat.ops.Nk,1), ...
+    [predict_label, accuracy, dec_values] = svmpredict(randn(h.dat.ops.Nk+N_imported_data,1), ...
         data,  h.dat.cl.svmmodel(cc).param); % test the training data
     
     h.dat.cl.svm_predicted_type(predict_label>0)=cc;
 end
 % overwrite with the teacher data
-h.dat.cl.svm_predicted_type(teacher_ind)=h.dat.cl.svm_class(teacher_ind);
-h = ApplyROIFilter(h);
+local_teacher_ind = teacher_ind(1:end-length(loaded_labels));
+% h.dat.cl.svm_predicted_type(local_teacher_ind)=h.dat.cl.svm_class(local_teacher_ind);
+ h.dat.cl.svm_predicted_type(local_teacher_ind)=h.dat.cl.svm_class(local_teacher_ind);
+ h.dat.cl.svm_predicted_type = h.dat.cl.svm_predicted_type(1:end-length(h.dat.cl.svm_teacher_label));
+ h = ApplyROIFilter(h);
 h = buildHue(h);
 h = buildSat(h);
 h = buildLambdaValue(h);
@@ -3168,6 +3181,7 @@ data = h.dat.cl.statTBL(:,svm_axis);
 if isfield(h.dat.cl,'svm_teacher_label')
 labels = cat(1,labels,h.dat.cl.svm_teacher_label);
 end
+
 if isfield(h.dat.cl,'svm_teacher_data')
 data = cat(1,data,h.dat.cl.svm_teacher_data);
 end

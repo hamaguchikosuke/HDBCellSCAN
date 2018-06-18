@@ -181,6 +181,7 @@ for ii=1:length(ops.fsroot)
     end
 end
 
+
 [ops,handles]=update_PlaneChString(ops,handles);
 
  % 2. Check ROI is detected
@@ -275,8 +276,15 @@ else
     PlaneCh=S(DirInd);
 end
 
+Val=get(handles.lb_PlaneCh,'Value');
+    if isempty(Val)
+        Val=1:length(S);
+    end
+    
 if ops.process.RegTiffDone
-    set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value', 1:length(S) );
+ set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value',Val );
+%     set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value', 1:length(S) );
+  
 end
 
 function handles=update_TxtStatus(hObject,eventdata,handles)

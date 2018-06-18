@@ -1,15 +1,17 @@
-function n = nFramesKH(tiff)
+function n = nFramesKH(tifffile)
 %nFrames find the number of frames in the Tiff
 
 %keep guessing until we seek too far
-guess = 1000;
-overSeeked = false;
 
-f = dir(tiff);
+
+f = dir(tifffile);
+
 if isempty(f)
     error('File not found!');
 end
- info=imfinfo(tiff);
+
+ info=imfinfo(tifffile);
+ 
 if f.bytes>4e9 && length(info)==1
    
     
@@ -25,6 +27,7 @@ else
     n = length(info);
     return;
 end
+
 
 % %%
 % if ischar(tiff)
