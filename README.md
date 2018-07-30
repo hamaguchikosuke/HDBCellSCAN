@@ -78,6 +78,27 @@ to confirm you have access to python from MATLAB. If it returns empty, you need 
 # III. Sample Data
 [20 frame averaged data](https://drive.google.com/open?id=1AZ6vBrWiMOHIOn4_DpTgvZkw6IhVUt4u)
 
+
+Please put the data in the following structure. 
+ 
+\<RootStorage\>\animal_ID\date\expts1 
+   
+\<RootStorage\>\animal_ID\date\expts2
+
+\<RootStorage\> is defined in the database m-file (for example, make_db_B6N792.m in this commit) and can be different from \<RootDir\>. animal_ID and date can be any character sequence. expts folder represents one continuous imaging experiment or session.  
+ 
+If a same plane is imaged without any time gap, put Tiff files in the same expts folder. (Note that multiple tiffs are read as they appear when sorted by filename). 
+
+If a same plane is imaged but with some time gap, put Tiff files in different expts folder. Then, in databse m-file, you can designate this information like db(i).expts = {'expts1','expts2', 'expts3'}
+
+Then registered images will be saved under 
+
+\<RootStorage\>\animal_ID\date\expts1_expts2_expts3
+
+
+If multi-plane is imaged, the order of multi-Tiff stack should be in the order of Channel-Plane-Time. For example, if 2-Ch, 2 plane is imaged, the order of tiff stack is (Ch1,Plane1,t0), (Ch2,Plane1,t0), (Ch1,Plane2,t0), (Ch2,Plane2,t0), (Ch1,Plane1,t1), .... 
+
+
 # IV. Trouble shooting (in Windows)
 
 ### 1. pyversion returns empty 
