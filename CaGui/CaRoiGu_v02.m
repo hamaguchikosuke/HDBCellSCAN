@@ -566,7 +566,7 @@ if  get(handles.rb_GetSignal,'Value') && ...
 end
 fprintf('==== Done ====\n');
 
-function manual_roi(ops0,handles);
+function manual_roi(ops0,handles)
 
 %%%%%%%%% get ROIs for selected plane, view, and channel %%%%%%%%
 PlaneChString = get(handles.lb_PlaneCh,'String');

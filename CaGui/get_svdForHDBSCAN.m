@@ -1,6 +1,13 @@
-function [ops, U, Sv, V, Fs, sdmov] = get_svdForHDBSCAN(ops)
+function [ops, U, Sv, V, Fs, sdmov] = get_svdForHDBSCAN(ops,varargin)
+% Usage1) calculate svd from ops struct.
+% [ops, U, Sv, V, Fs, sdmov] = get_svdForHDBSCAN(ops)
+% 
+% Usage2) calculate svd from ops struct and tiff file
+% [ops, U, Sv, V, Fs, sdmov] = get_svdForHDBSCAN(ops,FullTiffFiles)
+%  FullTiffFiles{1}='TiffDir/Tiff1.tiff';
+%  FullTiffFiles{2}='TiffDir/Tiff2.tiff';
+% 
 
-% iplane = ops.iplane;
 
 [Ly, Lx] = size(ops.mimg1);
 
@@ -22,35 +29,70 @@ nimgbatch = nt0 * floor(2000/nt0);
 fprintf('To calculate SVD, %2.0d frames are averaged\n',nt0);
 ops.nSVDforROI   = min(1000,ops.NavgFramesSVD);
 
-ix = 0;
-fid = fopen(ops.RegFile, 'r');
-
-mov = zeros(Ly, Lx, ops.NavgFramesSVD, 'single');
-
-while 1
-    data = fread(fid,  Ly*Lx*nimgbatch, '*int16');
-    if isempty(data)
-       break; 
-    end
-    data = single(data);
-    data = reshape(data, Ly, Lx, []);
+if nargin<2 
+    ix = 0;
+    fid = fopen(ops.RegFile, 'r');
     
-%     data = data(:,:,1:30:end);
-    % subtract off the mean of this batch
-    data = bsxfun(@minus, data, mean(data,3));
-%     data = bsxfun(@minus, data, ops.mimg1);
+    mov = zeros(Ly, Lx, ops.NavgFramesSVD, 'single');
     
-    irange = 1:nt0*floor(size(data,3)/nt0);
-    data = data(:,:, irange);
-    
-    data = reshape(data, Ly, Lx, nt0, []);
-    davg = single(squeeze(mean(data,3)));
-      
-    mov(:,:,ix + (1:size(davg,3))) = davg;
+    while 1
+        data = fread(fid,  Ly*Lx*nimgbatch, '*int16');
+        if isempty(data)
+            break;
+        end
+        data = single(data);
+        data = reshape(data, Ly, Lx, []);
         
-    ix = ix + size(davg,3);    
+        %     data = data(:,:,1:30:end);
+        % subtract off the mean of this batch
+        data = bsxfun(@minus, data, mean(data,3));
+        %     data = bsxfun(@minus, data, ops.mimg1);
+        
+        irange = 1:nt0*floor(size(data,3)/nt0);
+        data = data(:,:, irange);
+        
+        data = reshape(data, Ly, Lx, nt0, []);
+        davg = single(squeeze(mean(data,3)));
+        
+        mov(:,:,ix + (1:size(davg,3))) = davg;
+        
+        ix = ix + size(davg,3);
+    end
+    fclose(fid);
+else
+    ix = 0;
+    mov = zeros(Ly, Lx, ops.NavgFramesSVD, 'single');
+    
+    TiffFiles=varargin{1};
+    MultTiff=mlttiff(TiffFiles);
+    get_index=0;
+    
+    for nn=1:ceil(MultTiff.MaxSlice/nimgbatch) 
+        get_index=[1:nimgbatch]+(nn-1)*nimgbatch;
+        if get_index(end)>MultTiff.MaxSlice
+             get_index=get_index(1):MultTiff.MaxSlice;
+        end
+        data = MultTiff.get_stacks(get_index);
+        data = single(data);
+%         data = reshape(data, Ly, Lx, []);
+        
+        %     data = data(:,:,1:30:end);
+        % subtract off the mean of this batch
+        data = bsxfun(@minus, data, mean(data,3));
+        %     data = bsxfun(@minus, data, ops.mimg1);
+        
+        irange = 1:nt0*floor(size(data,3)/nt0);
+        data = data(:,:, irange);
+        
+        data = reshape(data, Ly, Lx, nt0, []);
+        davg = single(squeeze(mean(data,3)));
+        
+        mov(:,:,ix + (1:size(davg,3))) = davg;
+        
+        ix = ix + size(davg,3);
+    end
+    
 end
-fclose(fid);
 %%
 mov(:, :, (ix+1):end) = [];
 

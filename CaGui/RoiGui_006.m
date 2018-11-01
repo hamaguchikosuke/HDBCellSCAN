@@ -1,10 +1,10 @@
-function varargout = RoiGui_005(varargin)
+function varargout = RoiGui_006(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @RoiGui_005_OpeningFcn, ...
-                   'gui_OutputFcn',  @RoiGui_005_OutputFcn, ...
+                   'gui_OpeningFcn', @RoiGui_006_OpeningFcn, ...
+                   'gui_OutputFcn',  @RoiGui_006_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -18,10 +18,10 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-% --- Executes just before RoiGui_005 is made visible.
-function RoiGui_005_OpeningFcn(hObject, eventdata, h, varargin)
+% --- Executes just before RoiGui_006 is made visible.
+function RoiGui_006_OpeningFcn(hObject, eventdata, h, varargin)
 % This function has no output args, see OutputFcn.
-% varargin   command line arguments to RoiGui_005 (see VARARGIN)
+% varargin   command line arguments to RoiGui_006 (see VARARGIN)
  
 h=init_icons(hObject,eventdata,h);
 h=init_movie_timer(hObject,eventdata,h);
@@ -35,7 +35,7 @@ guidata(hObject, h);
 %     pb_LoadPlane_Callback(handles.pb_loadPlane, eventdata, h,varargin);
 % end
 
-% UIWAIT makes RoiGui_005 wait for user response (see UIRESUME)
+% UIWAIT makes RoiGui_006 wait for user response (see UIRESUME)
 % uiwait(h.figure1);
 
 function h=init_icons(hObject,eventdata,h)
@@ -90,7 +90,7 @@ drawnow;
 % disp('running')
     
 % --- Outputs from this function are returned to the command line.
-function varargout = RoiGui_005_OutputFcn(hObject, eventdata, h) 
+function varargout = RoiGui_006_OutputFcn(hObject, eventdata, h) 
 % varargout  cell array for returning output args (see VARARGOUT);
 varargout{1} = h.output;
 
@@ -209,8 +209,11 @@ else
     h.dat.F.FcellNeu = h.dat.FcellNeu; 
     h.dat = rmfield(h.dat,'FcellNeu');
     
-%     h.dat.F.Ftrue =subtract_neurop(h.dat.F.Fcell,h.dat.F.FcellNeu);
-    
+    for cc=1:length(h.dat.F.Fcell)
+        Coef='1/Regress';
+        h.dat.F.Ftrue{cc} =subtract_neurop(h.dat.F.Fcell{cc},...
+            h.dat.F.FcellNeu{cc},Coef);
+    end
 end
 
 h.dat.graph.maxmap = 1;
@@ -278,7 +281,7 @@ set(h.tg_DisplayMode,'Value',1);
 
 h= ModeSelectionButtonGroup_SelectionChangedFcn(h.tg_DisplayMode, eventdata, h);
  
-ButtonDownFcn=@(hObject,eventdata)RoiGui_005('TimeSelectionButtonDownFcn',h.axes_fluorescence,eventdata,h);
+ButtonDownFcn=@(hObject,eventdata)RoiGui_006('TimeSelectionButtonDownFcn',h.axes_fluorescence,eventdata,h);
 set(h.axes_fluorescence,'ButtonDownFcn',ButtonDownFcn);
 
 h=renew_cluster(h);
@@ -400,9 +403,12 @@ function h=update_Ftrace(h)
 %% construct F.trace
 h.dat.graph.map = 1;
 h.dat.F.trace = [];
+h.dat.F.truetrace = [];
 for i = 1:length(h.dat.F.Fcell)
     h.dat.F.trace = cat(2, h.dat.F.trace, h.dat.F.Fcell{i});
+    h.dat.F.truetrace = cat(2, h.dat.F.truetrace, h.dat.F.Ftrue{i});
 end
+
 if isfield(h.dat.F, 'FcellNeu')
     h.dat.F.neurop = [];
     for i = 1:length(h.dat.F.FcellNeu)
@@ -413,8 +419,15 @@ else
    h.dat.F.neurop = zeros(size(h.dat.F.trace), 'single');
 end
 h.dat.plot_neu = 0;
-h.dat.cl.statTBL.skewF = skewness(h.dat.F.trace,0,2);
-
+% Is skewF calculated from baseline subtracted data? or raw data? 
+use_trueF_for_skewF = 1;
+if (use_trueF_for_skewF)
+    % true F version
+    h.dat.cl.statTBL.skewF = skewness(h.dat.F.trace,0,2);
+else
+    % raw trace version
+    h.dat.cl.statTBL.skewF = skewness(h.dat.F.truetrace,0,2);
+end
 
 F=cat(2,h.dat.F.Fcell{:});
 zF = zscore(F,0,2);
@@ -1010,7 +1023,7 @@ else
             dw = 0.03;
             pos=[npos_x-dw/2 1-npos_y-dh/2 dw dh];
 %             pos=[0.5 0.5 0.03 0.03];
-            CallbackFcn=@(hObject,eventdata)RoiGui_005('enter_svm_value', hObject,eventdata,h);            
+            CallbackFcn=@(hObject,eventdata)RoiGui_006('enter_svm_value', hObject,eventdata,h);            
             h.svm_editnow=uicontrol('Style', 'edit','Parent',h.uipanel_Left,'String', '0',...
                 'Unit','normalized','Position',pos,...
                 'UserData',h,...
@@ -1360,7 +1373,33 @@ switch Mode
 %         end
 %         h.dat.cellmask = edge(h.dat.cellmask);
         h=redraw_figure(h);
-    
+    case 'tb_LabelMode'
+        
+        ROIColor=h.popup_ROI_ColorSelection.String{h.popup_ROI_ColorSelection.Value};
+        switch ROIColor
+            case 'Green'
+                PlotHue =0.333;
+            case 'Red'
+                PlotHue=0;
+            case 'Blue'
+                PlotHue=0.667;
+            otherwise
+                error('Unknown color %s',ROIColor);
+        end
+        PlotHue = PlotHue*ones(length(h.dat.F.ichosen_append),1);
+        
+        PlotColor =permute(cat(2,PlotHue(:),ones(length(PlotHue),2)),[1,3,2]);
+        PlotColor = hsv2rgb(PlotColor);
+        
+        h=redraw_fluorescence_multi(h,PlotColor);
+        
+        h = buildSat(h);
+        h = buildLambdaValue(h);
+        h = buildHue(h);
+        
+        h=redraw_figure(h);
+        
+           
     otherwise
         error('Unknown Tag %s',Mode);
 end
@@ -1483,11 +1522,21 @@ if isempty(h.dat.F.ichosen_append)
         y_trace=  [0 0];
     else
         x_trace = [1:NT];
-        y_trace=my_conv_local(double(h.dat.F.trace(h.dat.F.ichosen,:)), 3);
+         if get(h.rb_showneuropil,'Value')
+              y_trace=my_conv_local(double(h.dat.F.truetrace(h.dat.F.ichosen,:)), 3);
+         else
+              y_trace=my_conv_local(double(h.dat.F.trace(h.dat.F.ichosen,:)), 3);
+         end
     end
 else
     x_trace = [1:NT]; %repmat([1:NT NaN],size(h.dat.F.ichosen_append,1),1)';
-    y_trace=zscore(my_conv_local(double(h.dat.F.trace(h.dat.F.ichosen_append,:)), 3),0,2);
+    if get(h.rb_showneuropil,'Value')
+      y_trace=zscore(my_conv_local(double(h.dat.F.truetrace(h.dat.F.ichosen_append,:)), 3),0,2);
+    else
+       y_trace=zscore(my_conv_local(double(h.dat.F.trace(h.dat.F.ichosen_append,:)), 3),0,2);
+    end
+    
+ 
     y_trace = bsxfun(@plus, y_trace,2*[0:length(h.dat.F.ichosen_append)-1]');
 %     y_trace = cat(2,y_trace,NaN(size(y_trace,1),1))';
 %     
@@ -1599,7 +1648,8 @@ end
 if isempty(y_neurop)
     newydata = y_trace;
 else
-    newydata = subtract_neurop(y_trace,y_neurop);
+    Coef='1/Regress';
+    newydata = subtract_neurop(y_trace,y_neurop,Coef);
     newydata=my_conv_local(newydata',3)+mean(y_trace);
 end
 
@@ -1936,7 +1986,26 @@ switch Tag
                 h.dat.graph.img1.H(edge_pix)=HSV(1);
                 h.dat.graph.img2.H(edge_pix)=HSV(1);
             end
+       end
+    case 'tb_LabelMode'
+        % overwrite the hue value 
+        
+         ROIColor=h.popup_ROI_ColorSelection.String{h.popup_ROI_ColorSelection.Value};
+        switch ROIColor
+            case 'Green'
+                PlotHue =0.333;
+            case 'Red'
+                PlotHue=0;
+            case 'Blue'
+                PlotHue=0.667;
+            otherwise
+                error('Unknown color %s',ROIColor);
         end
+        PlotHue=PlotHue*ones(size(h.dat.cl.rands));
+        
+        h.dat.graph.img1.H       = reshape(PlotHue(h.dat.res.iclust1), h.dat.res.Ly, h.dat.res.Lx);
+        h.dat.graph.img2.H       = h.dat.graph.img1.H;
+
     otherwise
         error('Unknown Tag %s',Tag);
 end
@@ -1956,7 +2025,7 @@ end
 % Sat=~h.dat.graph.img0.BackGround; % make the background gray color.
  Sat = reshape(sqrt(h.dat.res.probabilities),h.dat.res.Ly,h.dat.res.Lx);
 switch Tag
-    case {'tg_DisplayMode','tg_EllipseMode','tg_ROIMergeMode','tg_ROISplitMode'}
+    case {'tg_DisplayMode','tg_EllipseMode','tg_ROIMergeMode','tg_ROISplitMode','tb_LabelMode'}
               
         % make selected cell white fringed.
         h.dat.cellmask=zeros(h.dat.res.Ly, h.dat.res.Lx);
@@ -2014,7 +2083,7 @@ h.dat.graph.img2.V =BG+Brightness*h.dat.res.M0.*~h.dat.graph.img0.BackGround...
              .*~h.dat.cl.k1;
        
 switch Tag
-   case {'tg_DisplayMode','tg_EllipseMode','tg_ROIMergeMode','tg_ROISplitMode'}
+   case {'tg_DisplayMode','tg_EllipseMode','tg_ROIMergeMode','tg_ROISplitMode','tb_LabelMode'}
     
       % do nothing more. 
                
@@ -2032,6 +2101,7 @@ switch Tag
           
 %             h.dat.graph.img2.V(edge_pix)=HSV(3);
         end
+  
         
     otherwise
         error('Unknown Tag %s',Tag);
@@ -2141,7 +2211,7 @@ ind_j = 1:max(handles.dat.QV.xlim);
 
 handles.dat.reg_fast_filename=fullfile(RegFastFilePath,RegFastFile);
 
-% from RoiGui_005, use mlttiff class to access multiple Tiff files as a single object. 
+% from RoiGui_006, use mlttiff class to access multiple Tiff files as a single object. 
     handles.dat.reg_data=mlttiff(handles.dat.reg_fast_filename);
 % 
 % handles.dat.reg_data = loadFramesBuff2(handles.dat.reg_fast_filename, ...
@@ -2399,38 +2469,42 @@ try delete(h.svm_editnow), catch, end
 switch Tag
     case 'tg_DisplayMode'
             
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_005('CellSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','DisplayMode');
     case 'tg_EllipseMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_005('EllipseSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('EllipseSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','EllipseMode');
     case 'tg_ROIMergeMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_005('CellSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
         
         handles=renew_cluster(handles);
     case 'tg_ROISplitMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_005('CellSplitButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSplitButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
         set(handles.uipanel_Left,'Title','ROISplitMode');
     case 'tb_SVMMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_005('CellSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
-%         ButtonDownFcn=@(hObject,eventdata)RoiGui_005('SVMSelectionButtonDownFcn',...
+%         ButtonDownFcn=@(hObject,eventdata)RoiGui_006('SVMSelectionButtonDownFcn',...
 %             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','SVMMode');
-           
+    case 'tb_LabelMode'
+         ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
+            hObject,eventdata,guidata(hObject));
+        set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
+         set(handles.uipanel_Left,'Title','DisplayMode');
     otherwise
         error('Unknown Tag %s',Tag);
 end
@@ -3250,3 +3324,102 @@ function cb_ROI_show_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of cb_ROI_show
+
+
+% --- Executes on selection change in popup_Label1_ColorSelection.
+function popup_Label1_ColorSelection_Callback(hObject, eventdata, handles)
+% hObject    handle to popup_Label1_ColorSelection (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popup_Label1_ColorSelection contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popup_Label1_ColorSelection
+
+
+% --- Executes during object creation, after setting all properties.
+function popup_Label1_ColorSelection_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popup_Label1_ColorSelection (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in cb_show_Label1.
+function cb_show_Label1_Callback(hObject, eventdata, handles)
+% hObject    handle to cb_show_Label1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of cb_show_Label1
+
+
+% --- Executes on selection change in popup_Label2_ColorSelection.
+function popup_Label2_ColorSelection_Callback(hObject, eventdata, handles)
+% hObject    handle to popup_Label2_ColorSelection (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popup_Label2_ColorSelection contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popup_Label2_ColorSelection
+
+
+% --- Executes during object creation, after setting all properties.
+function popup_Label2_ColorSelection_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popup_Label2_ColorSelection (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in cb_show_Label2.
+function cb_show_Label2_Callback(hObject, eventdata, handles)
+% hObject    handle to cb_show_Label2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of cb_show_Label2
+
+
+% --- Executes on button press in checkbox9.
+function checkbox9_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox9
+
+
+% --- Executes on button press in checkbox10.
+function checkbox10_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox10 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox10
+
+
+% --- Executes on button press in pb_LoadLabelImage.
+function pb_LoadLabelImage_Callback(hObject, eventdata, h)
+% hObject    handle to pb_LoadLabelImage (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+RegImg= Load_register_OtherChannels_20181001(h);
+
+% --- Executes on button press in tb_LabelMode.
+function tb_LabelMode_Callback(hObject, eventdata, handles)
+% hObject    handle to tb_LabelMode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of tb_LabelMode

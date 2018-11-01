@@ -589,8 +589,8 @@ if  get(handles.rb_ManualROI,'Value') && ...
         if exist(FsigFile,'file')
             fprintf('Please load Fsig file: %s\n', FsigFile);
 %             pb_LoadPlane_Callback(hObject, eventdata, h,varargin)
-            h=guidata(RoiGui_005);
-            RoiGui_005('pb_LoadPlane_Callback',h.figure1,[],h,FsigFile);
+            h=guidata(RoiGui_006);
+            RoiGui_006('pb_LoadPlane_Callback',h.figure1,[],h,FsigFile);
             % <To Dos>: load Fsig file automatically.
             
         else

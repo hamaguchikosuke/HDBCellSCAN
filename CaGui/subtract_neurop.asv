@@ -8,7 +8,7 @@ function Fout = subtract_neurop(Fcell,Fcellneu,varargin)
 % Fcell: N x T matrix. Each row is fluorescence of ROI.
 % Fcellneu: N x T matrix. Each row is fluorescence of neuropil mask.
 % Coef: can be empty. 
-%     : '1/Regress' means Coef=1, b(2)=1; Just subtract Fcellneu from Fcell. 
+%     : '1/Regress' means Coef=1, b(2)=1; Just subtract mean F/pix
 % 
 % -- output --
 % F = Fcell-Coef*b(2)*Fneurop
@@ -26,15 +26,12 @@ function Fout = subtract_neurop(Fcell,Fcellneu,varargin)
 % plot(TrueF,Fout)
 % 
 % by KH 20171124
-% update: 20181101
-%  add Coef='1/Regress' mode to subtract Fcellneu from Fcell. 
-
 UseRegress=1;
 
 if nargin>=3
     Coef = varargin{1};
     if ischar(Coef)
-        switch lower(Coef)
+        switch Coef
             case '1/regress'
                 UseRegress=0;
                 Coef=1;

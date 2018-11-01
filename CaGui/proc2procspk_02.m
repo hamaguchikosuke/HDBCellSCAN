@@ -5,6 +5,9 @@ function proc2procspk(FullProcFile)
 %  Output is _procSpk.mat
 % 
 %  by KH 20171121
+%  Update: 20181101: subtract_neuropil with option, Coef='1/Regress'
+%  because in some neuropil dense image, I have to maximize the
+%  subtraction.
 
 
 if isempty(FullProcFile)
@@ -47,7 +50,8 @@ for jj=1:NumSubDirs
     Ff=[dat.F.Fcell{jj}(cellindex,:)];
     Ffneu = [dat.F.FcellNeu{jj}(cellindex,:)];
     
-    Ftmp = subtract_neurop(Ff,Ffneu);
+    Coef='1/Regress';
+    Ftmp = subtract_neurop(Ff,Ffneu,Coef);
     
     medF=medfilt1(Ftmp,dat.ops.imageRate*300,[],2,'truncate');
     Ftmp=Ftmp-medF;
