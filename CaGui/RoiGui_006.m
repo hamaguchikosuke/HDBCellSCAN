@@ -406,7 +406,7 @@ h.dat.F.trace = [];
 h.dat.F.truetrace = [];
 for i = 1:length(h.dat.F.Fcell)
     h.dat.F.trace = cat(2, h.dat.F.trace, h.dat.F.Fcell{i});
-    h.dat.F.truetrace = cat(2, h.dat.F.truetrace, h.dat.F.Ftrue{i});
+%     h.dat.F.truetrace = cat(2, h.dat.F.truetrace, h.dat.F.Ftrue{i});
 end
 
 if isfield(h.dat.F, 'FcellNeu')
@@ -418,15 +418,22 @@ if isfield(h.dat.F, 'FcellNeu')
 else
    h.dat.F.neurop = zeros(size(h.dat.F.trace), 'single');
 end
+
+ Coef='1/Regress';
+h.dat.F.truetrace=subtract_neurop(h.dat.F.trace,h.dat.F.neurop,Coef);
+ 
+    
 h.dat.plot_neu = 0;
 % Is skewF calculated from baseline subtracted data? or raw data? 
 use_trueF_for_skewF = 1;
 if (use_trueF_for_skewF)
     % true F version
     h.dat.cl.statTBL.skewF = skewness(h.dat.F.trace,0,2);
+%     h.dat.cl.statTBL.AutoCorr = fft(h.dat.F.trace,[],2);
 else
     % raw trace version
     h.dat.cl.statTBL.skewF = skewness(h.dat.F.truetrace,0,2);
+%     h.dat.cl.statTBL.AutoCorr = fft(h.dat.F.truetrace,[],2);
 end
 
 F=cat(2,h.dat.F.Fcell{:});

@@ -54,7 +54,8 @@ if length(info)<2
     stripByteCounts = info(1).StripByteCounts;
     Nframes=floor(info(1).FileSize/stripByteCounts);
    
-    stripOffset = stripOffset(1) + (0:1:(Nframes-1))'.*stripByteCounts+1;
+%     stripOffset = ceil(stripOffset(1) + (0:1:(Nframes-1))'.*stripByteCounts+1);until 20181207
+    stripOffset = ceil(stripOffset(1) + (0:1:(Nframes-1))'.*stripByteCounts); % 
     stripByteCounts = stripByteCounts*ones(Nframes,1);
   
 else
