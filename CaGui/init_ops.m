@@ -34,7 +34,7 @@ ops0.SubPixel               = Inf; % 2 is alignment by 0.5 pixel, Inf is the exa
 ops0.NimgFirstRegistration  = 500; % number of images to include in the first registration pass 
 ops0.nimgbegend             = 250; % frames to average at beginning and end of blocks
 ops0.MaxMovementPixel       = 100; % If the estimated movement shift is more than this value, use interpolation. 
-ops0.PhaseCorrBlurSTD       = 1.5; % To stabilize the selection of movement shift, filter the phase correlation with Gaussian filter.
+ops0.PhaseCorrBlurSTD       = getOr(ops0,{'PhaseCorrBlurSTD'},1.5); % To stabilize the selection of movement shift, filter the phase correlation with Gaussian filter.
 
 % cell detection options
 % ops0.clustModel             = 'neuropil'; % standard or neuropil, or fast_spectral (by KH)

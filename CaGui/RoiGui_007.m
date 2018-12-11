@@ -1,10 +1,10 @@
-function varargout = RoiGui_006(varargin)
+function varargout = RoiGui_007(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @RoiGui_006_OpeningFcn, ...
-                   'gui_OutputFcn',  @RoiGui_006_OutputFcn, ...
+                   'gui_OpeningFcn', @RoiGui_007_OpeningFcn, ...
+                   'gui_OutputFcn',  @RoiGui_007_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -18,10 +18,10 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-% --- Executes just before RoiGui_006 is made visible.
-function RoiGui_006_OpeningFcn(hObject, eventdata, h, varargin)
+% --- Executes just before RoiGui_007 is made visible.
+function RoiGui_007_OpeningFcn(hObject, eventdata, h, varargin)
 % This function has no output args, see OutputFcn.
-% varargin   command line arguments to RoiGui_006 (see VARARGIN)
+% varargin   command line arguments to RoiGui_007 (see VARARGIN)
  
 h=init_icons(hObject,eventdata,h);
 h=init_movie_timer(hObject,eventdata,h);
@@ -35,7 +35,7 @@ guidata(hObject, h);
 %     pb_LoadPlane_Callback(handles.pb_loadPlane, eventdata, h,varargin);
 % end
 
-% UIWAIT makes RoiGui_006 wait for user response (see UIRESUME)
+% UIWAIT makes RoiGui_007 wait for user response (see UIRESUME)
 % uiwait(h.figure1);
 
 function h=init_icons(hObject,eventdata,h)
@@ -90,7 +90,7 @@ drawnow;
 % disp('running')
     
 % --- Outputs from this function are returned to the command line.
-function varargout = RoiGui_006_OutputFcn(hObject, eventdata, h) 
+function varargout = RoiGui_007_OutputFcn(hObject, eventdata, h) 
 % varargout  cell array for returning output args (see VARARGOUT);
 varargout{1} = h.output;
 
@@ -440,7 +440,7 @@ end
 
 zF = zscore(h.dat.F.truetrace,0,2);
 d = 10;
-dzF = zscore(F(:,(1+d):end)-F(:,1:end-d),0,2);
+dzF = zscore(zF(:,(1+d):end)-zF(:,1:end-d),0,2);
 % cellid = find(h.dat.cl.selected); % to visualize correlation, 
 % h.dat.cl.C_of_zF=zF(cellind,:)*zF(cellind,:)'/size(zF,2);
 % would be easier to see.  
@@ -448,6 +448,37 @@ h.dat.cl.C_of_zF=zF*zF'/size(zF,2);
 h.dat.cl.C_of_dzF=dzF*dzF'/size(dzF,2);
 h.dat.cl.IDX = recalc_IDX(h);
 
+%% Here is a new code to add signal/noise ratio by calculating the power ratio below 1Hz and above. 
+FPS= 30;
+Tlen = 100*FPS;
+% Multitaper Time-Frequency Power-Spectrum (power spectrogram)
+% function A=mtpsg(x,nFFT,Fs,WinLength,nOverlap,NW,nTapers)
+% x : input time series
+nFFT = 2^nextpow2(Tlen); %number of points of FFT to calculate (default 1024)
+Fs = FPS; %sampling frequency (default 2)
+WinLength = nFFT; %length of moving window (default is nFFT)
+nOverlap = 0;%nFFT/2; %overlap between successive windows (default is WinLength/2)
+NW = 3; %time bandwidth parameter (e.g. 3   or 4), default 3
+nTapers = 2*NW-1; % nTapers = number of data tapers kept, default 2*NW -1
+Detrend= 1; 
+
+SNratio = nan(1,size(zF,1));
+
+waitH = waitbar(0,'Computing power spectrum ...');
+for ii=1:size(zF,1)
+[yo, fo]=my_mtcsg(zF(ii,:),nFFT,Fs,WinLength,nOverlap,NW,Detrend,nTapers);
+myo=mean(abs(yo),2);
+% plot(fo,myo);
+
+ind=fo<1; 
+sig1Hz_power=sum(myo(ind));
+noise_power=sum(myo(~ind));
+SNratio(ii)=sig1Hz_power/noise_power;
+waitbar(ii/size(zF,1),waitH);
+end
+close(waitH);
+SNratio(isnan(SNratio))=1;
+h.dat.cl.statTBL.SNratio = log(SNratio(:));
 
 
 function [cell_index,roi_index]=get_correlated_roi(C_of_zF,cell_id,threshold)
@@ -2222,7 +2253,7 @@ ind_j = 1:max(handles.dat.QV.xlim);
 
 handles.dat.reg_fast_filename=fullfile(RegFastFilePath,RegFastFile);
 
-% from RoiGui_006, use mlttiff class to access multiple Tiff files as a single object. 
+% from RoiGui_007, use mlttiff class to access multiple Tiff files as a single object. 
     handles.dat.reg_data=mlttiff(handles.dat.reg_fast_filename);
 % 
 % handles.dat.reg_data = loadFramesBuff2(handles.dat.reg_fast_filename, ...
@@ -2507,7 +2538,7 @@ switch Tag
         
         ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
-%         ButtonDownFcn=@(hObject,eventdata)RoiGui_006('SVMSelectionButtonDownFcn',...
+%         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('SVMSelectionButtonDownFcn',...
 %             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','SVMMode');
@@ -3075,7 +3106,7 @@ labels = h.dat.cl.svm_class;
 
 % labels = labels(teacher_ind);
 
-svm_axis = {'Compactness','npix','Eccentricity','Solidity','V','skewF'};
+svm_axis = {'Compactness','npix','Eccentricity','Solidity','V','skewF','SNratio'};
 data = h.dat.cl.statTBL(:,svm_axis);
 
 if isfield(h.dat.cl,'svm_teacher_label')
@@ -3224,7 +3255,7 @@ teacher_ind = (labels~=0);
 % labels = labels(teacher_ind);
 unique_classes = unique(labels); unique_classes(unique_classes==0)=[];
 
-svm_axis = {'Compactness','npix','Eccentricity','Solidity','V','skewF'};
+svm_axis = {'Compactness','npix','Eccentricity','Solidity','V','skewF','SNratio'};
 teacher_data = cl.statTBL(teacher_ind,svm_axis);
 h.dat.cl.svm_teacher_label = labels(teacher_ind);
 h.dat.cl.svm_teacher_data = teacher_data;
