@@ -283,7 +283,7 @@ set(h.tg_DisplayMode,'Value',1);
 
 h= ModeSelectionButtonGroup_SelectionChangedFcn(h.tg_DisplayMode, eventdata, h);
  
-ButtonDownFcn=@(hObject,eventdata)RoiGui_006('TimeSelectionButtonDownFcn',h.axes_fluorescence,eventdata,h);
+ButtonDownFcn=@(hObject,eventdata)RoiGui_007('TimeSelectionButtonDownFcn',h.axes_fluorescence,eventdata,h);
 set(h.axes_fluorescence,'ButtonDownFcn',ButtonDownFcn);
 
 h=renew_cluster(h);
@@ -310,6 +310,7 @@ N=length(h.dat.stat);
 h.dat.cl.statTBL = struct2table(h.dat.stat);
 h.dat.cl.selected = ones(N,1);
 h.dat.cl.statTBL.skewF = inf(N,1);
+h.dat.cl.statTBL.SNratio = ones(N,1); 
 
 rng('default');
 h.dat.cl.rands_orig   = .1 + .8 * rand(h.dat.ops.Nk,1);
@@ -343,7 +344,7 @@ VarsToUpdate   = setdiff(fieldnames(h.dat.cl.statTBL),fieldnames(h.dat.stat));
 VarsToUpdate   = setdiff(VarsToUpdate,TableProperties);
 
 % rescure variables that are not included in h.dat.stat but in h.dat.cl.statTBL
-for ss=VarsToUpdate
+for ss=VarsToUpdate'
  tmp.(ss{1})= h.dat.cl.statTBL.(ss{1});
 end
 
@@ -354,10 +355,12 @@ dN = N-length(h.dat.cl.selected);
 
 h.dat.cl.selected      = cat(1,h.dat.cl.selected,ones(dN,1));
 
-for ss=VarsToUpdate
+for ss=VarsToUpdate'
     switch ss{1}
         case 'skewF'
              h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),inf(dN,1));
+        case 'SNratio'
+             h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),ones(dN,1));
         otherwise
             error('Unknown variables %s',ss);
     end
@@ -427,58 +430,73 @@ h.dat.F.truetrace=subtract_neurop(h.dat.F.trace,h.dat.F.neurop,Coef);
     
 h.dat.plot_neu = 0;
 % Is skewF calculated from baseline subtracted data? or raw data? 
+
 use_trueF_for_skewF = 1;
 if (use_trueF_for_skewF)
     % true F version
-    h.dat.cl.statTBL.skewF = skewness(h.dat.F.trace,0,2);
-%     h.dat.cl.statTBL.AutoCorr = fft(h.dat.F.trace,[],2);
+    [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(h.dat.F.truetrace);
 else
     % raw trace version
-    h.dat.cl.statTBL.skewF = skewness(h.dat.F.truetrace,0,2);
-%     h.dat.cl.statTBL.AutoCorr = fft(h.dat.F.truetrace,[],2);
+    [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(h.dat.F.trace);
 end
+h.dat.cl.statTBL.skewF =skewF;
+h.dat.cl.statTBL.SNratio  = SNratio;
 
-zF = zscore(h.dat.F.truetrace,0,2);
-d = 10;
-dzF = zscore(zF(:,(1+d):end)-zF(:,1:end-d),0,2);
-% cellid = find(h.dat.cl.selected); % to visualize correlation, 
-% h.dat.cl.C_of_zF=zF(cellind,:)*zF(cellind,:)'/size(zF,2);
-% would be easier to see.  
-h.dat.cl.C_of_zF=zF*zF'/size(zF,2);
-h.dat.cl.C_of_dzF=dzF*dzF'/size(dzF,2);
+h.dat.cl.C_of_zF=C_of_zF;
+h.dat.cl.C_of_dzF=C_of_dzF;
 h.dat.cl.IDX = recalc_IDX(h);
 
-%% Here is a new code to add signal/noise ratio by calculating the power ratio below 1Hz and above. 
-FPS= 30;
-Tlen = 100*FPS;
-% Multitaper Time-Frequency Power-Spectrum (power spectrogram)
-% function A=mtpsg(x,nFFT,Fs,WinLength,nOverlap,NW,nTapers)
-% x : input time series
-nFFT = 2^nextpow2(Tlen); %number of points of FFT to calculate (default 1024)
-Fs = FPS; %sampling frequency (default 2)
-WinLength = nFFT; %length of moving window (default is nFFT)
-nOverlap = 0;%nFFT/2; %overlap between successive windows (default is WinLength/2)
-NW = 3; %time bandwidth parameter (e.g. 3   or 4), default 3
-nTapers = 2*NW-1; % nTapers = number of data tapers kept, default 2*NW -1
-Detrend= 1; 
-
-SNratio = nan(1,size(zF,1));
-
-waitH = waitbar(0,'Computing power spectrum ...');
-for ii=1:size(zF,1)
-[yo, fo]=my_mtcsg(zF(ii,:),nFFT,Fs,WinLength,nOverlap,NW,Detrend,nTapers);
-myo=mean(abs(yo),2);
-% plot(fo,myo);
-
-ind=fo<1; 
-sig1Hz_power=sum(myo(ind));
-noise_power=sum(myo(~ind));
-SNratio(ii)=sig1Hz_power/noise_power;
-waitbar(ii/size(zF,1),waitH);
-end
-close(waitH);
-SNratio(isnan(SNratio))=1;
-h.dat.cl.statTBL.SNratio = log(SNratio(:));
+% if (use_trueF_for_skewF)
+%     % true F version
+%     h.dat.cl.statTBL.skewF = skewness(h.dat.F.trace,0,2);
+% %     h.dat.cl.statTBL.AutoCorr = fft(h.dat.F.trace,[],2);
+% else
+%     % raw trace version
+%     h.dat.cl.statTBL.skewF = skewness(h.dat.F.truetrace,0,2);
+% %     h.dat.cl.statTBL.AutoCorr = fft(h.dat.F.truetrace,[],2);
+% end
+% 
+% zF = zscore(h.dat.F.truetrace,0,2);
+% d = 10;
+% dzF = zscore(zF(:,(1+d):end)-zF(:,1:end-d),0,2);
+% % cellid = find(h.dat.cl.selected); % to visualize correlation, 
+% % h.dat.cl.C_of_zF=zF(cellind,:)*zF(cellind,:)'/size(zF,2);
+% % would be easier to see.  
+% h.dat.cl.C_of_zF=zF*zF'/size(zF,2);
+% h.dat.cl.C_of_dzF=dzF*dzF'/size(dzF,2);
+% h.dat.cl.IDX = recalc_IDX(h);
+% 
+% %% Here is a new code to add signal/noise ratio by calculating the power ratio below 1Hz and above. 
+% FPS= 30;
+% Tlen = 100*FPS;
+% % Multitaper Time-Frequency Power-Spectrum (power spectrogram)
+% % function A=mtpsg(x,nFFT,Fs,WinLength,nOverlap,NW,nTapers)
+% % x : input time series
+% nFFT = 2^nextpow2(Tlen); %number of points of FFT to calculate (default 1024)
+% Fs = FPS; %sampling frequency (default 2)
+% WinLength = nFFT; %length of moving window (default is nFFT)
+% nOverlap = 0;%nFFT/2; %overlap between successive windows (default is WinLength/2)
+% NW = 3; %time bandwidth parameter (e.g. 3   or 4), default 3
+% nTapers = 2*NW-1; % nTapers = number of data tapers kept, default 2*NW -1
+% Detrend= 1; 
+% 
+% SNratio = nan(1,size(zF,1));
+% 
+% waitH = waitbar(0,'Computing power spectrum ...');
+% for ii=1:size(zF,1)
+% [yo, fo]=my_mtcsg(zF(ii,:),nFFT,Fs,WinLength,nOverlap,NW,Detrend,nTapers);
+% myo=mean(abs(yo),2);
+% % plot(fo,myo);
+% 
+% ind=fo<1; 
+% sig1Hz_power=sum(myo(ind));
+% noise_power=sum(myo(~ind));
+% SNratio(ii)=sig1Hz_power/noise_power;
+% waitbar(ii/size(zF,1),waitH);
+% end
+% close(waitH);
+% SNratio(isnan(SNratio))=1;
+% h.dat.cl.statTBL.SNratio = log(SNratio(:));
 
 
 function [cell_index,roi_index]=get_correlated_roi(C_of_zF,cell_id,threshold)
@@ -597,9 +615,12 @@ fprintf('Saving results %s ...\n',filename)
 
 dat = h.dat;
 dat.res.iclust = dat.res.iclust1; % overwrite iclust 
+dat.stat=update_stat(dat.res.iclust,dat.res.M); 
+
 dat.F.trace = []; % no longer needed
 dat.F.truetrace =[]; % no longer needed
 dat.F.neurop =[]; % no longer needed
+dat.F.Ftrue =[]; % no longer needed
 % dat.res = rmfield(dat.res,'iclust1');
 
 if isfield(dat,'reg_data'),dat=rmfield(dat,'reg_data'); end % to remove huge data. end
@@ -1065,7 +1086,7 @@ else
             dw = 0.03;
             pos=[npos_x-dw/2 1-npos_y-dh/2 dw dh];
 %             pos=[0.5 0.5 0.03 0.03];
-            CallbackFcn=@(hObject,eventdata)RoiGui_006('enter_svm_value', hObject,eventdata,h);            
+            CallbackFcn=@(hObject,eventdata)RoiGui_007('enter_svm_value', hObject,eventdata,h);            
             h.svm_editnow=uicontrol('Style', 'edit','Parent',h.uipanel_Left,'String', '0',...
                 'Unit','normalized','Position',pos,...
                 'UserData',h,...
@@ -2511,39 +2532,39 @@ try delete(h.svm_editnow), catch, end
 switch Tag
     case 'tg_DisplayMode'
             
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','DisplayMode');
     case 'tg_EllipseMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('EllipseSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_007('EllipseSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','EllipseMode');
     case 'tg_ROIMergeMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
         
         handles=renew_cluster(handles);
     case 'tg_ROISplitMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSplitButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSplitButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
         set(handles.uipanel_Left,'Title','ROISplitMode');
     case 'tb_SVMMode'
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
+        ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
 %         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('SVMSelectionButtonDownFcn',...
 %             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','SVMMode');
     case 'tb_LabelMode'
-         ButtonDownFcn=@(hObject,eventdata)RoiGui_006('CellSelectionButtonDownFcn',...
+         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
          set(handles.uipanel_Left,'Title','DisplayMode');
@@ -3292,7 +3313,7 @@ teacher_ind = [];
 % labels = labels(teacher_ind);
 unique_classes = [];
 
-svm_axis = {'Compactness','npix','Eccentricity','Solidity','V','skewF'};
+svm_axis = {'Compactness','npix','Eccentricity','Solidity','V','skewF','SNratio'};
 data = h.dat.cl.statTBL(:,svm_axis);
 
 if isfield(h.dat.cl,'svm_teacher_label')

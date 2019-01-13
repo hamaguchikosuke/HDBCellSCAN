@@ -64,7 +64,13 @@ if ops1.getROIs
             title(savename,'FontSize',9,'Interpreter','none');
             
             print(gcf,'-dpng',fullfile(savepath,[savename,'.png']));
-
+            %% and reference image 
+            clf;
+            imshow(res.M);
+            title(savename,'FontSize',9,'Interpreter','none');
+            drawnow;
+            print(gcf,'-dpng',fullfile(savepath,[strrep(savename,'ROI','RefImg'),'.png']));
+            
         case {'standard', 'neuropil'}
 
             [~, ~,ops1] = apply_ROIrules_kh(ops1, stat, res, clustrules);

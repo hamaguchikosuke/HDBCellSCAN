@@ -4,7 +4,7 @@ addpath(genpath('C:\home\GitHub\suite2P')) % path to suite2P
 addpath(genpath('C:\home\GitHub\HDBCellScan')) % path to HDBCellScan folder
 
 
-P=pyversion;
+P=pyversion;    
 if isempty(P)
     errordlg('Python is not found. Install Python or set PATH so that Windows can find it');
 end
@@ -22,7 +22,7 @@ edit('C:\home\GitHub\HDBCellScan\TestData\make_db_B6N792');
 %% Load the database m-file from master control 
 HDBCellScan_Master_v03; 
 
-% ==== Brief Instructions====
+%% ==== Brief Instructions====
 % 
 % ---- analysis ----
 % (1): ImageReg 
@@ -65,12 +65,14 @@ HDBCellScan_Master_v03;
 % 
 % ===== F ====
 % F contains all the fluorescent and extracted action potential data.
-% F.FcellNeu: Neuropil subtracted Fluoresecent data.
-% F.FcellNeu{1}(cl.selected,:) are selected ROIs fluorescence signal
-% through HDBCellSCAN_GUI.
-% F.Spk     : estimated action potential data
+% F.Fcell   : Fluorescent data within ROI
+% F.FcellNeu: Neuropil (surrounding region of ROI) fluoresecent data.
+% F.Ftrue   : Neuropil subtracted data 
+% F.Ftrue{1}(cl.selected,:) are selected ROIs fluorescence signal through HDBCellSCAN_GUI.
+% F.Spk     : estimated action potential data by using Fast oopsi algorithm
+%  
 % 
 % 
-% 
-% 
+%% Where is the analysis parameter defined?
+% init_ops.m
 % 

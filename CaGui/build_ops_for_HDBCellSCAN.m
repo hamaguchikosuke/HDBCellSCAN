@@ -26,7 +26,11 @@ if isempty(db.RegDirs) % use the file under ops.RootDir\ops.SubDirs\
     for j = 1:length(ops.SubDirs)
         ops.fsroot{j} = dir(fullfile(ops.RootDir, ops.SubDirs{j}, '*.tif'));
         if isempty(ops.fsroot{j})
-            warning('No .tif files in %s',fullfile(ops.RootDir,ops.SubDirs{j}));
+            if ~exist(fullfile(ops.RootDir, ops.SubDirs{j}),'dir')
+                fprintf('No such directory found (%s)',fullfile(ops.RootDir,ops.SubDirs{j}));
+            else
+                warning('No .tif files in %s',fullfile(ops.RootDir,ops.SubDirs{j}));
+            end
         end
         for k = 1:length(ops.fsroot{j})
             ops.fsroot{j}(k).name = fullfile(ops.RootDir, ops.SubDirs{j}, ops.fsroot{j}(k).name);

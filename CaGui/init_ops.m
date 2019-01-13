@@ -7,9 +7,9 @@ function ops0 = init_ops(ops0)
 ops0.useGPU                 = 1; % if you can use an Nvidia GPU in matlab this accelerates registration approx 3 times. You only need the Nvidia drivers installed (not CUDA).
 
 % root paths for files and temporary storage (ideally an SSD drive. my SSD is C:/)
-ops0.RootStorage            =getOr(ops0, {'RootStorage'}, 'F:\home\ImagingData\DualLickMice\'); % Suite2P assumes a folder structure, check out README file
+ops0.RootStorage            =getOr(ops0, {'RootStorage'}, 'F:\home\ImagingData\DualLickMice\'); % HDBCellSCAN assumes a folder structure, check out README file
 % ops0.RootStorage            = 'G:\Kosuke\Data\Fh\DualLickMice\'; % Suite2P assumes a folder structure, check out README file
-ops0.temp_tiff              = 'G:\Kosuke\Data\temp.tif'; % copy each remote tiff locally first, into this file
+ops0.temp_tiff              = 'G:\Kosuke\Data\temp.tif'; % This parameter should be NOT used in HDBCellSCAN. % in Suite2P, copy each remote tiff locally first, into this file
 ops0.RegFileRoot            = 'G:\Kosuke\Data';  % location for binary file, better to be SSD drive.
 if ~exist(ops0.RegFileRoot,'dir')
     try mkdir(ops0.RegFileRoot)

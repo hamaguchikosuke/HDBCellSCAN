@@ -233,7 +233,7 @@ for kk = 1:length(fs) % For each SubDir
         
         nFr = nFramesKH(ops.temp_tiff);
         if mod(nFr, nchannels) ~= 0
-            fprintf('  WARNING: number of frames in tiff (%d) is NOT a multiple of number of channels!\n', ff);
+            fprintf('WARNING: number of frames in tiff (%d) is NOT a multiple of number of channels!\n', ff);
         end
         nChunk = 6000*nchannels;
         nSteps = ceil(nFr/nChunk);

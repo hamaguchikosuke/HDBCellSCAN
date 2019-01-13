@@ -68,20 +68,17 @@ for jj=1:NumSubDirs
     
     
 end
-% update F-independent stats (it should have been done in RoiGui program,
-% but old RoiGui program did not update them.
-fprintf('Updating stats...')
-dat.stat= get_stat_from_iclust(dat.res.iclust,dat.res.M);
-fprintf('and F-dependent stats (skewF, SNratio)\n');
 
 % update F-dependent stats 
+stat =  get_stat_from_iclust(iclust,M);
+
 use_trueF_for_skewF = 1;
-if (use_trueF_for_skewF)        
+if (use_trueF_for_skewF)
     % true F version
-    [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(cat(2,dat.F.Ftrue{:}));
+    [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(cat(2,dat.F.Ftrue));
 else
     % raw trace version
-    [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(cat(2,dat.F.Fcell{:}));
+    [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(cat(2,dat.F.Fcell));
 end
 dat.cl.statTBL.skewF =skewF;
 dat.cl.statTBL.SNratio  = SNratio;
