@@ -155,6 +155,8 @@ if ops.useSVD == 0
                 ipix_neuropil= data.stat(k).ipix_neuropil;
                 if ~isempty(ipix_neuropil)
                     Fneu(k,index) = mean(mov(ipix_neuropil,:), 1);
+                else % this ROI has no neuropil defined. It is either background, or something weird happend. 
+                    Fneu(k,index)=F(k,index);
                 end
             end
         end

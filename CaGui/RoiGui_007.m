@@ -446,6 +446,7 @@ h.dat.cl.C_of_zF=C_of_zF;
 h.dat.cl.C_of_dzF=C_of_dzF;
 h.dat.cl.IDX = recalc_IDX(h);
 
+
 % if (use_trueF_for_skewF)
 %     % true F version
 %     h.dat.cl.statTBL.skewF = skewness(h.dat.F.trace,0,2);
@@ -3146,7 +3147,7 @@ else
     loaded_teacher_data= [];
 end
 N_imported_data = length(loaded_labels);
-data = zscore(double(table2array(data)),0,1);
+data = nanzscore(double(table2array(data)),0,1);
 
 % data= double(data(:,teacher_ind));
 
