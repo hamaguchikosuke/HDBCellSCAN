@@ -281,8 +281,14 @@ Val=get(handles.lb_PlaneCh,'Value');
         Val=1:length(S);
     end
     
-if ops.process.RegTiffDone
- set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value',Val );
+% Before image registration, plane_ch dir does not exist. After collecting processed data into a single hard disk, 
+% tiff files (except for x4 stacked images) are not copied, and this
+% program will take it as "Not registered". In this case, existence of
+% plane_ch folder will tell the user that image registered data alredy
+% exists. 
+
+if ops.process.RegTiffDone || ~isempty(S) 
+    set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value',Val );
 %     set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value', 1:length(S) );
   
 end
@@ -308,7 +314,9 @@ else,                       set(handles.text_ProcFile,'String','Not Found'); end
 if ops.process.ProcSpkDone, set(handles.text_ProcSpk,'String','Found'), 
 else,                       set(handles.text_ProcSpk,'String','Not Found'); end
 
-
+% We may also need to update PlaneCh panel for each data entry. 
+% Check whether this does not cause any problem .
+[ops,handles]=update_PlaneChString(ops,handles);
 
 % --- Executes during object creation, after setting all properties.
 function lb_sessions_CreateFcn(hObject, eventdata, handles)
@@ -455,13 +463,14 @@ toc(TSTART);
 
 %%%%% cleanup %%%%%
 try
-    for ii=1:length(ops1)
+    for ii=1:length(ops1)       
         if ops1{ii}.DeleteBin
             fclose('all');
             delete(ops1{ii}.RegFile);        % delete temporary bin file
         end
     end
 end
+gong(5,400,1);pause(1);gong(5,400,1);pause(1);gong(5,400,1);
 
 function ops1=update_reg(ops0,handles)
  
@@ -469,7 +478,8 @@ function ops1=update_reg(ops0,handles)
 ops1 = [];
 if get(handles.rb_imagereg,'Value') && ...
         (handles.DB.redo_analysis || (~ops0.process.RegTiffDone || ~ops0.process.SVDDone) )
-     ops1         = reg2P_kh006(ops0);  %  ver.6. GrinLens mode is added. 
+        ops1         = reg2P_kh007(ops0);    %  ver.7. GrinLens mode is added. 
+%      ops1         = reg2P_kh006(ops0);  %  ver.6. GrinLens mode is added. 
 %       ops1         = reg2P_kh005(ops0);  % ver.5
      % At this point, ops1 contains Plane x View x Channel size. 
     % get_SVD function relies on temporally generated temp_file, so always use right after reg2P. 
@@ -594,7 +604,7 @@ if  get(handles.rb_ManualROI,'Value') && ...
             % <To Dos>: load Fsig file automatically.
             
         else
-            errordlg(sprintf('%s does not exist.', ROIFile));
+            errordlg(sprintf('%s does not exist.', FsigFile));
         end
     end
 
@@ -622,7 +632,7 @@ if  get(handles.rb_FinalizeSignal,'Value') && ...
           sprintf('Fsig_%s_%s_%s_MinClust%d_procSpk.mat', ops0.mouse_name, ops0.date, PlaneChString{pp},MinClustSize));
      
       
-      if exist(ProcSpkFile,'file') & handles.rb_updateSpikeOnly.Value
+      if exist(ProcFile,'file') & handles.rb_updateSpikeOnly.Value
        
           % In case update (ProcSpkFile already exists but overwrite)
           proc2procspk_02(ProcFile);
@@ -632,8 +642,23 @@ if  get(handles.rb_FinalizeSignal,'Value') && ...
 
           % tmp.ops contains previous options. ops0 inherits latest options.
           % ops1{pp} needs to be constructed based on ops0, but otherwise use old values
-          ops1{pp} = update_ops(ops0,tmp.ops);
+           ops1{pp} = update_ops(ops0,tmp.ops);
           
+% the following code ask user to decide where to save. When commented out, always saved under ops1{pp}.ResultsSavePath            
+%           if ~strncmp(ops0.ResultsSavePath , ops1.ResultsSavePath,length(ops0.ResultsSavePath))
+%               ButtonName = questdlg('ResultsSavePath conflict: likely you worked on a local _proc file, and update the signal by using the original data source. Which one to use?', ...
+%                   'Conflict ', ...
+%                   ProcFile, ops0.ResultsSavePath,'Cancel');
+%               switch ButtonName
+%                   case {ProcFile,ops0.ResultsSavePath}
+%                       fprintf('Use %s\n',ButtonName);
+%                   case 'Cancel'
+%                       disp('User cancelled');
+%                       return;
+%               end % switch
+%               
+%           end
+         
           ops1{pp}.PlaneChString = PlaneChString{pp};
           
           neuropilSub    = 'surround'; %getOr(ops1, {'neuropilSub'}, 'surround')

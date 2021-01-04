@@ -48,8 +48,8 @@ else
     errordlg(sprintf('%s does not exist!',LoadName));
 end
 
-[SavePath,SaveName,Ext]=fileparts(SaveName);
-
+[~,SaveName,Ext]=fileparts(SaveName);
+SavePath=ops.ResultsSavePath;
 if ops.newFile
     SaveName = [SaveName,'_new'];
 end
@@ -68,7 +68,9 @@ Nk       = numel(data.stat); % all ROIs including parents
 % end
 
 if UseProcFile == 1
-    useCells = find(data.cl.selected);
+%     useCells = find(data.cl.selected);%  this excludes the background rois or unselected ones, but that's not good.
+    BGind=data.cl.statTBL.npix>0.1*numel(data.res.iclust); % roi that occupy 10% of the image is considered as background.
+    useCells = setdiff(1:length(data.cl.selected),find(BGind)); % >20201230. we analyze all the roi's data. This might change the behavior of the later process... 1 is always the background. 
 else
     useCells = find([data.stat.igood]);
 end
@@ -105,7 +107,9 @@ if ops.getNeuropil
         tmp=squeeze(neuropMasks(mCell,:,:));
         data.stat(k).ipix_neuropil=find(tmp);
     end
+    data.stat(find(BGind)).ipix_neuropil=[];
 end
+
 
 %% get signals and neuropil
 if ops.useSVD == 0
@@ -130,7 +134,7 @@ if ops.useSVD == 0
     
     StartInd=MTiff.CumNSeries(1:end-1)+1;
     EndInd = MTiff.CumNSeries(2:end);
-
+%%
     for ii=1:length(MTiff.nSeries)
 %         mov = fread(fid,  LyU*LxU*nimgbatch, '*int16');
         index = StartInd(ii):EndInd(ii);

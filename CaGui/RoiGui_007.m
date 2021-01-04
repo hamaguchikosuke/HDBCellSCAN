@@ -119,6 +119,8 @@ fprintf('Loading %s...\n',LOADNAME);
 
 h.dat = load(LOADNAME);
 h.dat.filename = LOADNAME;
+
+
 [filepath1,filename1,ext]=fileparts(LOADNAME);
 set(h.figure1, 'Name', filename1);
 
@@ -616,7 +618,7 @@ fprintf('Saving results %s ...\n',filename)
 
 dat = h.dat;
 dat.res.iclust = dat.res.iclust1; % overwrite iclust 
-dat.stat=update_stat(dat.res.iclust,dat.res.M); 
+dat.stat=update_stat(dat.res.iclust,dat.res.M); % <We should update it at loading point>
 
 dat.F.trace = []; % no longer needed
 dat.F.truetrace =[]; % no longer needed
@@ -1202,6 +1204,7 @@ else
     if exist(SVDFile,'file')    
         waitH = waitbar(0.2,sprintf('Loding %s',SVDFile),'Name','Loading SVD to calculate k-means..');
         h.dat.svd=   load(SVDFile, 'U','Sv');
+        guidata(hObject,h);
         waitbar(1,waitH);
         delete(waitH);
     else
@@ -1268,6 +1271,7 @@ unique_roi = unique(h.dat.res.iclust1);
 nROI = max(unique_roi);
 switch SplitOrNot
     case 'Split'
+        
         for ii=1:Nlabel
             BW=zeros(size(h.dat.res.iclust1));
             BW(ind(idx==ii))=1;
@@ -1283,6 +1287,7 @@ switch SplitOrNot
         %exclude original ROI
      
         h.dat.cl.manual(target)=-0.5;
+        h.dat.cl.selected(target)=0; % set the original unselected. 
         
         h=update_cl(h);
         fprintf('iclust=%d is split into %d and %d\n',target,nROI-1,nROI);
@@ -1294,6 +1299,7 @@ switch SplitOrNot
     otherwise
         error('Unknown answer %s',SplitOrNot)
 end
+h=redraw_figure(h);
 guidata(hObject,h);
 
  % cell selection function
@@ -1396,7 +1402,7 @@ function h=update_figure(h)
 Mode = h.ModeSelectionButtonGroup.SelectedObject.Tag;
 
 switch Mode
-    case {'tg_DisplayMode','tg_ROISplitMode'}
+    case {'tg_DisplayMode','tg_ROISplitMode','tg_ROIMergeMode'}
         PlotHue = h.dat.cl.rands(h.dat.F.ichosen_append);
         PlotColor =permute(cat(2,PlotHue(:),ones(length(PlotHue),2)),[1,3,2]);
         PlotColor = hsv2rgb(PlotColor);
@@ -1417,8 +1423,8 @@ switch Mode
         
     case 'tg_EllipseMode'
 %         h=add_imellipse_Callback(hObject, eventdata, h);
-    case 'tg_ROIMergeMode'
-        h=redraw_corrimg(h);
+%     case 'pb_ROIMergeMode'
+%         h=redraw_corrimg(h);
     case 'tb_SVMMode'
         PlotHue = h.dat.cl.rands(h.dat.F.ichosen_append);
         PlotColor =permute(cat(2,PlotHue(:),ones(length(PlotHue),2)),[1,3,2]);
@@ -1587,8 +1593,10 @@ if isempty(h.dat.F.ichosen_append)
     else
         x_trace = [1:NT];
          if get(h.rb_showneuropil,'Value')
+             % neuropil subtracted 
               y_trace=my_conv_local(double(h.dat.F.truetrace(h.dat.F.ichosen,:)), 3);
          else
+             % raw fluorescence. 
               y_trace=my_conv_local(double(h.dat.F.trace(h.dat.F.ichosen,:)), 3);
          end
     end
@@ -1703,12 +1711,7 @@ else
     y_neurop = [];
     set(h.plot_fluorescence_baseF,'XData',NaN,'YData',NaN);
 end
-% y = double(h.dat.F.trace(h.dat.F.ichosen,:))';
-% x = [ones(length(y_neurop),1), y_neurop'];
-% % b=regress(y_trace,x);
-% b = x'*x\x'*y_trace';
-% Coef = 0.6;
-% newydata=y_trace-Coef*b(2)*y_neurop-b(1);
+
 if isempty(y_neurop)
     newydata = y_trace;
 else
@@ -2369,7 +2372,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function merge_two_roi(hObject,eventdata,h)
 
 
 % --------------------------------------------------------------------
@@ -2492,14 +2494,20 @@ function uipanel46_ButtonDownFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in tg_ROIMergeMode.
-function tg_ROIMergeMode_Callback(hObject, eventdata, handles)
-% hObject    handle to tg_ROIMergeMode (see GCBO)
+% --- Executes on button press in pb_ROIMergeMode.
+function pb_ROIMergeMode_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_ROIMergeMode (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of tg_ROIMergeMode
+% Hint: get(hObject,'Value') returns toggle state of pb_ROIMergeMode
+if  get(hObject,'Value')
+    merge_rois(hObject,eventdata,h)
+end
 
+
+function merge_rois(hObject,eventdata,h)
+ROIs_to_merge=h.dat.F.ichosen_append
 
 % --- Executes on button press in tg_ROISplitMode.
 function tg_ROISplitMode_Callback(hObject, eventdata, handles)
@@ -2542,14 +2550,10 @@ switch Tag
         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('EllipseSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
-         set(handles.uipanel_Left,'Title','EllipseMode');
-    case 'tg_ROIMergeMode'
-        
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSelectionButtonDownFcn',...
-            hObject,eventdata,guidata(hObject));
-        set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
-        
-        handles=renew_cluster(handles);
+        set(handles.uipanel_Left,'Title','EllipseMode');
+%     case 'tg_ROIMergeMode' % merge is not considered as a mode. Merge already selected rois. 
+       
+       
     case 'tg_ROISplitMode'
         
         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSplitButtonDownFcn',...
@@ -3487,3 +3491,10 @@ function tb_LabelMode_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of tb_LabelMode
+
+
+% --- Executes during object creation, after setting all properties.
+function rb_showneuropil_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to rb_showneuropil (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called

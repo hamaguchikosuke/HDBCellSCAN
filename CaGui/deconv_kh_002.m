@@ -29,7 +29,14 @@ switch class(F)
         F = double(F);
     otherwise
 end
-
+if any(isnan(F))
+    warning('F contains NaN. This program cannot analyze this data.');
+    n= zeros(size(F));
+    C= zeros(size(F));
+    P.alp = NaN;
+    P.bet = NaN;   
+    return;
+end
 F = F(:); % make sure it is column vector
 
 Fs = 33;
@@ -81,6 +88,7 @@ for z= (0.1).^[0:13]
     cnt = 1;
     while  norm(d)>0.05 && ss>1.e-3
         cnt = cnt+1;
+     
         n = M*C;
         OneOverMC = 1./n;
         D = (F-alp*C-bet); % difference vector

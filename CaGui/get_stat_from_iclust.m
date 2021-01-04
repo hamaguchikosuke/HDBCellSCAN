@@ -44,5 +44,5 @@ for k = unique_clust(:)'
     stat(k).Solidity = sttmp.Solidity;   % npix/ConvexArea. 
     stat(k).Eccentricity = sttmp.Eccentricity; % 0 is circle, 1 is line.
     stat(k).Perimeter = sttmp.Perimeter; % 0 is circle, 1 is line.
-   
+    stat(k).ipix_neuropil = []; % neuropil will be computed in get_signals_and_neuropil_kh. 
 end

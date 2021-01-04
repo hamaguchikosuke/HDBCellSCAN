@@ -8,8 +8,7 @@ function [Overlap,IA,IB] = ROIOverlapMatrix_001(ROIA,ROIB)
 % ----- Input=-----
 % ROIA, ROIB
 % ROIA and ROIB is a matrix of integers where integers prepresents the ROI
-% ID of each pixel. This program assumes that one pixel only belongs to a
-% single ROI. 
+% ID of each pixel. This program assumes that a single pixel belongs to a single ROI. 
 % 
 % Output: Overlap
 % 
@@ -19,7 +18,7 @@ function [Overlap,IA,IB] = ROIOverlapMatrix_001(ROIA,ROIB)
 % 
 % IA: sorted labels in ROIA
 % IB: sorted labels in ROIB.
-% 
+%   
 % Overlap(i,j) means overlap between IA(i) in ROIA and IB(j) in ROIB.
 % 
 % 
