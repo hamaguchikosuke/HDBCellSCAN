@@ -18,6 +18,12 @@ else
 end
 % End initialization code - DO NOT EDIT
 
+%% data dependencies 
+%  
+%   h.dat.stat=update_stat(h.dat.res.iclust1,h.dat.res.M); 
+%  h=init_cl(h);     % cluster selection and related variables
+%    h=update_Ftrace(h); % inside, h.dat.cl.statTBL.skewF is updated.
+%%
 % --- Executes just before RoiGui_007 is made visible.
 function RoiGui_007_OpeningFcn(hObject, eventdata, h, varargin)
 % This function has no output args, see OutputFcn.
@@ -94,7 +100,7 @@ function varargout = RoiGui_007_OutputFcn(hObject, eventdata, h)
 % varargout  cell array for returning output args (see VARARGOUT);
 varargout{1} = h.output;
 
-function pb_LoadPlane_Callback(hObject, eventdata, h,varargin)
+function h=pb_LoadPlane_Callback(hObject, eventdata, h,varargin)
 % [filename1,filepath1]=uigetfile('\\zserver\Lab\Share\Marius\', 'Select Data File');
 
 if nargin>=4
@@ -124,6 +130,9 @@ h.dat.filename = LOADNAME;
 [filepath1,filename1,ext]=fileparts(LOADNAME);
 set(h.figure1, 'Name', filename1);
 
+%% initialize images 
+% delete(h.axes_left.Children);
+%% 
 
 
 % if flag
@@ -134,12 +143,23 @@ set(h.figure1, 'Name', filename1);
 % keyboard;
 if isfield(h.dat, 'dat')
     h.dat = h.dat.dat;
+    fprintf('h.dat.dat -> h.dat\n')
+    h.dat.stat=update_stat(h.dat.res.iclust,h.dat.res.M); % update stat at loading point.
+%     h=update_Ftrace(h);
+%     h=update_cl(h);     % cluster selection and related variables
+   
 elseif isfield(h.dat.ops,'processed_date')
+    fprintf('processed data \n')
     if ~isfield(h.dat.res,'iclust1')
      h.dat.res.iclust1 = h.dat.res.iclust;
     end
-    % do nothing
-else
+ 
+    h.dat.stat=update_stat(h.dat.res.iclust,h.dat.res.M); % update stat at loading point.
+      h=init_QV(h);
+%     h=update_Ftrace(h);
+%     h=update_cl(h);     % cluster selection and related variables
+    
+else % first time to load proc. 
     
     h.dat.filename = getOr(h.dat,'filename',fullfile(filepath1, filename1));
     
@@ -220,6 +240,16 @@ else
     end
 end
 
+%% added 20210118 to make sure all the scalar stats are scalars in vector, not in cells. -> should not be necessary if statTBL is correctly updated after splitting and merging in get_stat_from_iclust
+% scalar_vars_in_statTBL={'mrs','npix','mrs0','Compactness', 'V','Solidity','Eccentricity','Perimeter','SNratio','skewF'};
+% for vv=1:length(scalar_vars_in_statTBL)
+%     varname=scalar_vars_in_statTBL{vv};
+%     if iscell(h.dat.cl.statTBL.(varname))
+%         varval=[h.dat.cl.statTBL.(varname){:}]; % we found some statTBL values are empty, and that's why it became cell array to keep it empty.
+%         h.dat.cl.statTBL.(varname)=varval(:);
+%     end
+% end
+%%
 h.dat.graph.maxmap = 1;
 ops = h.dat.ops;
 
@@ -244,7 +274,10 @@ end
 
 h.dat.procmap = 0;
 
+h=update_cl(h);    
 h=update_Ftrace(h); % inside, h.dat.cl.statTBL.skewF is updated.
+h.dat.stat=table2struct(h.dat.cl.statTBL);
+
 h = ApplyROIFilter(h);
 h.dat.F.ichosen_append = [];
 h = buildSat(h);
@@ -335,49 +368,105 @@ h.dat.cl.type_number_table = ...
     
 function h=update_cl(h)
 
-for ii=1:length(h.dat.stat)
-    if isempty(h.dat.stat(ii).Compactness)
-        h.dat.stat(ii).Compactness=h.dat.stat(ii).mrs/h.dat.stat(ii).mrs0;
-    end
-end
+% should be no longer necessary, as it is taken care by get_stat_from_iclust 
 
-TableProperties = {'Properties','Row','Variables'};
-VarsToUpdate   = setdiff(fieldnames(h.dat.cl.statTBL),fieldnames(h.dat.stat));
-VarsToUpdate   = setdiff(VarsToUpdate,TableProperties);
-
-% rescure variables that are not included in h.dat.stat but in h.dat.cl.statTBL
-for ss=VarsToUpdate'
- tmp.(ss{1})= h.dat.cl.statTBL.(ss{1});
-end
-
+% for ii=1:length(h.dat.stat)
+%     if isempty(h.dat.stat(ii).Compactness)
+%         h.dat.stat(ii).Compactness=h.dat.stat(ii).mrs/h.dat.stat(ii).mrs0;
+%     end
+% end
 
 h.dat.cl.statTBL = struct2table(h.dat.stat);
 N = length(h.dat.stat);
+% number of new entries, cl.selected is not updated yet. 
 dN = N-length(h.dat.cl.selected);
 
-h.dat.cl.selected      = cat(1,h.dat.cl.selected,ones(dN,1));
+if dN>0
+    
+VarsToUpdate   = setdiff(h.dat.cl.statTBL.Properties.VariableNames,fieldnames(h.dat.stat));
 
-for ss=VarsToUpdate'
-    switch ss{1}
-        case 'skewF'
-             h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),inf(dN,1));
-        case 'SNratio'
-             h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),ones(dN,1));
-        otherwise
-            error('Unknown variables %s',ss);
+if ~isempty(VarsToUpdate)
+    % rescue variables that are not included in h.dat.stat but in h.dat.cl.statTBL
+    for ss=VarsToUpdate'
+        tmp.(ss{1})= h.dat.cl.statTBL.(ss{1});
     end
 end
 
+h.dat.cl.selected      = cat(1,h.dat.cl.selected,ones(dN,1));
+    if ~isempty(VarsToUpdate)
+ 
+    for ss=VarsToUpdate'
+        switch ss{1}
+            case 'skewF'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),inf(dN,1));
+            case 'SNratio'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),ones(dN,1));
+            otherwise
+                error('Unknown variables %s',ss);
+        end
+    end
+    end
+    
+    rng('default');
+    h.dat.cl.rands_orig   = .1 + .8 * rand(N,1);
+    h.dat.cl.rands        = h.dat.cl.rands_orig;
+    h.dat.cl.manualmerge  = cat(1,h.dat.cl.manualmerge,zeros(dN,1));
+    h.dat.cl.svm_class    = cat(1,h.dat.cl.svm_class,  zeros(dN,1));
+    h.dat.cl.svm_predicted_type   = cat(1,h.dat.cl.svm_predicted_type,  zeros(dN,1));
+    h.dat.cl.manual       = cat(1,h.dat.cl.manual,ones(dN,1));
+    h.dat.cl.redcell      = cat(1,h.dat.cl.redcell,zeros(dN,1));
 
-rng('default');
-h.dat.cl.rands_orig   = .1 + .8 * rand(N,1);
-h.dat.cl.rands        = h.dat.cl.rands_orig;
-h.dat.cl.manualmerge  = cat(1,h.dat.cl.manualmerge,zeros(dN,1));
-h.dat.cl.svm_class    = cat(1,h.dat.cl.svm_class,  zeros(dN,1));
-h.dat.cl.svm_predicted_type   = cat(1,h.dat.cl.svm_predicted_type,  zeros(dN,1));
-h.dat.cl.manual       = cat(1,h.dat.cl.manual,ones(dN,1));
-h.dat.cl.redcell      = cat(1,h.dat.cl.redcell,zeros(dN,1));
+end
 
+function h=add_cl(h,dN)
+% add new rows of statTBL for split or merged ROI. 
+
+% should be no longer necessary, as it is taken care by get_stat_from_iclust 
+
+% for ii=1:length(h.dat.stat)
+%     if isempty(h.dat.stat(ii).Compactness)
+%         h.dat.stat(ii).Compactness=h.dat.stat(ii).mrs/h.dat.stat(ii).mrs0;
+%     end
+% end
+
+h.dat.cl.statTBL = struct2table(h.dat.stat);
+
+if dN>0
+    
+VarsToUpdate   = setdiff(h.dat.cl.statTBL.Properties.VariableNames,fieldnames(h.dat.stat));
+
+if ~isempty(VarsToUpdate)
+    % rescue variables that are not included in h.dat.stat but in h.dat.cl.statTBL
+    for ss=VarsToUpdate'
+        tmp.(ss{1})= h.dat.cl.statTBL.(ss{1});
+    end
+end
+
+h.dat.cl.selected      = cat(1,h.dat.cl.selected,ones(dN,1));
+%     if ~isempty(VarsToUpdate)
+ 
+    for ss=VarsToUpdate'
+        switch ss{1}
+            case 'skewF'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),inf(dN,1));
+            case 'SNratio'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),ones(dN,1));
+            otherwise
+                error('Unknown variables %s',ss);
+        end
+    end
+%     end
+    
+    rng('default');
+    h.dat.cl.rands_orig   = .1 + .8 * rand(N,1);
+    h.dat.cl.rands        = h.dat.cl.rands_orig;
+    h.dat.cl.manualmerge  = cat(1,h.dat.cl.manualmerge,zeros(dN,1));
+    h.dat.cl.svm_class    = cat(1,h.dat.cl.svm_class,  zeros(dN,1));
+    h.dat.cl.svm_predicted_type   = cat(1,h.dat.cl.svm_predicted_type,  zeros(dN,1));
+    h.dat.cl.manual       = cat(1,h.dat.cl.manual,ones(dN,1));
+    h.dat.cl.redcell      = cat(1,h.dat.cl.redcell,zeros(dN,1));
+
+end
 
 function h=init_QV(h)
  % set all quadrants as not visited
@@ -440,6 +529,12 @@ if (use_trueF_for_skewF)
 else
     % raw trace version
     [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(h.dat.F.trace);
+end
+
+dN=height(h.dat.cl.statTBL)-length(skewF);
+if dN>0
+    skewF=cat(1,skewF(:),inf(dN,1));
+    SNratio=cat(1,SNratio(:),ones(dN,1));
 end
 h.dat.cl.statTBL.skewF =skewF;
 h.dat.cl.statTBL.SNratio  = SNratio;
@@ -618,7 +713,8 @@ fprintf('Saving results %s ...\n',filename)
 
 dat = h.dat;
 dat.res.iclust = dat.res.iclust1; % overwrite iclust 
-dat.stat=update_stat(dat.res.iclust,dat.res.M); % <We should update it at loading point>
+% this eliminates some split ROI's area to be zero, and makes it difficult to calculate the later process. 
+ dat.stat=update_stat(dat.res.iclust,dat.res.M); % <We should update it at loading point>
 
 dat.F.trace = []; % no longer needed
 dat.F.truetrace =[]; % no longer needed
@@ -728,15 +824,17 @@ quadrant(hObject, h, iy, ix);
 paint_quadbutton(h, iy, ix);
 
 function paint_quadbutton(h, iy, ix)
-for j = 1:3
-    for i = 1:3
-        if h.QV.quadvalue(j,i)==1
-            set(h.(sprintf('Q%d%d', j,i)), 'BackgroundColor','yellow'); 
+   
+    for j = 1:3
+        for i = 1:3
+            if h.QV.quadvalue(j,i)==1
+                set(h.(sprintf('Q%d%d', j,i)), 'BackgroundColor','yellow');
+            end
         end
     end
-end
-set(h.(sprintf('Q%d%d', iy,ix)), 'BackgroundColor','red'); 
-
+    
+    set(h.(sprintf('Q%d%d', iy,ix)), 'BackgroundColor','red');
+    
 % --- Executes on button press in full.
 function full_Callback(hObject, eventdata, h)
 %QV: quadrant view
@@ -1180,7 +1278,10 @@ y1 = min(max(1, round(y1)), h.dat.res.Ly);
 hold on; plotH=plot(x1,y1,'ro');
 
 % another center of k-means clustering
+
+set(h.left_imageH,'HitTest','off'); % to avoid evoking the callback again 
 x2 = ceil(ginput(1));
+set(h.left_imageH,'HitTest','on');
 y2 = x2(2);
 x2 = x2(1);
 
@@ -1281,8 +1382,10 @@ switch SplitOrNot
 %             tiny fragments are left with original iclust number. 
             nROI= nROI+1;
             h.dat.res.iclust1(CC.PixelIdxList{max_id})=nROI;
-            h.dat.stat(nROI)= get_stat_from_iclust(h.dat.res.iclust1==nROI,h.dat.res.M);
-            
+            tmp= get_stat_from_iclust(h.dat.res.iclust1==nROI,h.dat.res.M);
+            tmp.skewF=inf;
+            tmp.SNratio=1;
+            h.dat.stat(nROI)=tmp;
         end
         %exclude original ROI
      
@@ -1299,7 +1402,14 @@ switch SplitOrNot
     otherwise
         error('Unknown answer %s',SplitOrNot)
 end
+
+% come back to display mode        
+
+% set(h.left_imageH,'Hittest','on');
+% h.ModeSelectionButtonGroup.SelectedObject=h.tg_DisplayMode;
+
 h=redraw_figure(h);
+h=update_figure(h);
 guidata(hObject,h);
 
  % cell selection function
@@ -1386,12 +1496,23 @@ fprintf('\nclust=%d(iscell=%2.1f,manual=%2.1f), (x,y)=(%2d,%2d)\n',...
     h.dat.cl.selected(h.dat.F.ichosen),...
     h.dat.cl.manual(h.dat.F.ichosen),...
     x,y);
-fprintf('Compactness=%2.1f, npix=%d\n', h.dat.cl.statTBL.Compactness(h.dat.F.ichosen),...
-    h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+try
+    fprintf('Compactness=%2.1f, npix=%d\n', h.dat.cl.statTBL.Compactness(h.dat.F.ichosen),...
+        h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+catch
+    fprintf('Compactness=%2.1f, npix=%d\n', h.dat.cl.statTBL.Compactness{h.dat.F.ichosen},...
+        h.dat.cl.statTBL.npix{h.dat.F.ichosen});
+end
 fprintf('Skew(F)=%3.3f, ',h.dat.cl.statTBL.skewF(h.dat.F.ichosen));
-fprintf('Eccentricity=%3.3f, ',h.dat.cl.statTBL.Eccentricity(h.dat.F.ichosen));
-fprintf('Solidity=%3.3f, ',h.dat.cl.statTBL.Solidity(h.dat.F.ichosen));
-fprintf('meanV=%3.3f,',h.dat.cl.statTBL.V(h.dat.F.ichosen)/h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+try fprintf('Eccentricity=%3.3f, ',h.dat.cl.statTBL.Eccentricity(h.dat.F.ichosen));
+    fprintf('Solidity=%3.3f, ',h.dat.cl.statTBL.Solidity(h.dat.F.ichosen));
+    fprintf('meanV=%3.3f,',h.dat.cl.statTBL.V(h.dat.F.ichosen)/h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+catch
+    fprintf('Eccentricity=%3.3f, ',h.dat.cl.statTBL.Eccentricity{h.dat.F.ichosen}); 
+    fprintf('Solidity=%3.3f, ',h.dat.cl.statTBL.Solidity{h.dat.F.ichosen});
+    fprintf('meanV=%3.3f,',h.dat.cl.statTBL.V{h.dat.F.ichosen}/h.dat.cl.statTBL.npix{h.dat.F.ichosen});
+end
+
 fprintf('manual label=%d\n',h.dat.cl.svm_class(h.dat.F.ichosen));
 
 
@@ -1406,6 +1527,7 @@ switch Mode
         PlotHue = h.dat.cl.rands(h.dat.F.ichosen_append);
         PlotColor =permute(cat(2,PlotHue(:),ones(length(PlotHue),2)),[1,3,2]);
         PlotColor = hsv2rgb(PlotColor);
+        
         h=redraw_fluorescence_multi(h,PlotColor);
         
         h = buildSat(h);
@@ -2553,7 +2675,7 @@ switch Tag
         set(handles.uipanel_Left,'Title','EllipseMode');
 %     case 'tg_ROIMergeMode' % merge is not considered as a mode. Merge already selected rois. 
        
-       
+        
     case 'tg_ROISplitMode'
         
         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSplitButtonDownFcn',...
@@ -2596,7 +2718,11 @@ IDXtmp = zeros(size(IDX));
 
 for ii=1:length(unique_cluster)
     ind = find(IDX==unique_cluster(ii));
-    [npix_max,npix_max_ind]=  max(h.dat.cl.statTBL.npix(ind));
+    npix=h.dat.cl.statTBL.npix(ind);
+    if iscell(npix)
+        npix=[npix{:}];
+    end
+    [npix_max,npix_max_ind]=  max(npix);
     IDXtmp(ind)= ind(npix_max_ind);
 end
 IDX = IDXtmp;
@@ -3164,7 +3290,7 @@ for cc=unique_classes(:)'
     h.dat.cl.svmmodel(cc).param = svmtrain(2*train_label(teacher_ind)-1,...
         data(teacher_ind,:), '-c 400 -g 0.01');
     
-    [predict_label, accuracy, dec_values] = svmpredict(randn(h.dat.ops.Nk+N_imported_data,1), ...
+    [predict_label, accuracy, dec_values] = svmpredict(randn(size(data,1),1), ...
         data,  h.dat.cl.svmmodel(cc).param); % test the training data
     
     h.dat.cl.svm_predicted_type(predict_label>0)=cc;

@@ -12,7 +12,7 @@ function [Overlap,IA,IB] = ROIOverlapMatrix_001(ROIA,ROIB)
 % 
 % Output: Overlap
 % 
-% Overlap = 2* #pixels shared in ROI(1) and ROI(2)
+% Overlap = 2* #pixels in the intersection of ROI(1) and ROI(2)
 %            -----------------------------------
 %             #pixels in ROI(1) +  ROI(2)
 % 
@@ -21,7 +21,10 @@ function [Overlap,IA,IB] = ROIOverlapMatrix_001(ROIA,ROIB)
 %   
 % Overlap(i,j) means overlap between IA(i) in ROIA and IB(j) in ROIB.
 % 
-% 
+% Overlap is larger than or equal to Jaccard distance which is defined as 
+% Jaccard =   #pixels in the intersection of ROI(1) and ROI(2) 
+%            -----------------------------------
+%             #pixels of union( ROI(1) +  ROI(2))
 % 
 % 
 % by KH 20170818

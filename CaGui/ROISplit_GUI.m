@@ -97,7 +97,7 @@ if isempty(gcbf)
     ScreenSize=get(0,'ScreenSize');
     set(0,'Units',ScreenUnits);
 
-    FigPos(1)=1/2*(ScreenSize(3)-FigWidth);
+    FigPos(1)=(ScreenSize(3)-FigWidth);
     FigPos(2)=2/3*(ScreenSize(4)-FigHeight);
 else
     GCBFOldUnits = get(gcbf,'Units');

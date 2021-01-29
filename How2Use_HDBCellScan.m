@@ -1,8 +1,16 @@
 %% setup path to matlab and python
 % Please change the path accordingly.
-addpath(genpath('C:\home\GitHub\HDBCellScan')) % path to HDBCellScan folder
-addpath(genpath('C:\home\GitHub\suite2P')) % path to suite2P 
-addpath(genpath('C:\home\GitHub\FromSuite2P')) % path to modified suite2P programs (for KH)
+Path2Add={'C:\home\GitHub\HDBCellScan','C:\home\GitHub\suite2P','C:\home\GitHub\FromSuite2P'};
+for ii=1:length(Path2Add)
+    C=genpath(Path2Add{ii});
+    C=strsplit(C,';'); 
+    C=C(~contains(C,'.git')); % too many .git related folders. Exclude them. 
+    C=[sprintf('%s;',C{:})];
+    addpath(C);
+end
+% addpath(genpath('C:\home\GitHub\HDBCellScan')) % path to HDBCellScan folder
+% addpath(genpath('C:\home\GitHub\suite2P')) % path to suite2P 
+% addpath(genpath('C:\home\GitHub\FromSuite2P')) % path to modified suite2P programs (for KH)
     
 
 P=pyversion;    
@@ -19,7 +27,7 @@ P = py.sys.path;
 append(P,python_path);
 
 %% First, setup database m-file 
-edit('C:\home\GitHub\HDBCellScan\TestData\make_db_B6N792');
+% edit('C:\home\GitHub\HDBCellScan\TestData\make_db_B6N792');
 %% Load the database m-file from master control 
 HDBCellScan_Master_v03;  
 

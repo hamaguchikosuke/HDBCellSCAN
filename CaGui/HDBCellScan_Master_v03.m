@@ -160,6 +160,8 @@ ops = init_ops(ops);
 ops=build_ops_for_HDBCellSCAN(db,ops);
 
 % check registered tiff file exists
+LatestDate=cell(length(ops.fsroot),2);
+
 ops.process.RegTiffDone = true;
 for ii=1:length(ops.fsroot)
     if isempty(ops.fsroot{ii})
@@ -172,6 +174,8 @@ for ii=1:length(ops.fsroot)
     if ~exist(tmp_fsroot.name)
         ops.process.RegTiffDone = false;  
     else
+        S=dir(tmp_fsroot.name);
+%         if LatestDate{ii,1}<S.datenum, LatestDate(ii)
         if isfield(tmp_fsroot,'folder')
         ops.RegTiffPath{ii}=tmp_fsroot.folder; 
         else
@@ -215,20 +219,23 @@ switch handles.DB.ops.selected_analysis_ver
 end
 
 SVDFile = dir(fullfile(ops.ResultsSavePath,ops.SVDSearchString));
-if ~isempty(SVDFile),   ops.SVDFile = SVDFile.name;  ops.process.SVDDone = true;
-else                    ops.SVDFile =  [];           ops.process.SVDDone = false; end
+if ~isempty(SVDFile),   ops.SVDFile = SVDFile.name;  ops.process.SVDDone = true; ops.process.SVDdatenum=SVDFile.datenum;
+else                    ops.SVDFile =  [];           ops.process.SVDDone = false;ops.process.SVDdatenum=0;
+end
 
 ROIFile = dir(fullfile(ops.ResultsSavePath,ops.ROISearchString));
-if ~isempty(ROIFile),   ops.ROIFile = ROIFile.name;  ops.process.ROIDone = true;
-else                    ops.ROIFile =  [];           ops.process.ROIDone = false; end
+if ~isempty(ROIFile),   ops.ROIFile = ROIFile.name;  ops.process.ROIDone = true; ops.process.ROIdatenum=ROIFile.datenum;
+else                    ops.ROIFile =  [];           ops.process.ROIDone = false;ops.process.ROIdatenum=0;
+end
   
 % 3. Check signal is calculated
 % We can check this by inspecting whether 
 % there is F file,  Fsig_<mouse_name>_<date>_plane<#>_ch<#>_MinClust<#>.mat
 
 FSignalFile = dir(fullfile(ops.ResultsSavePath,ops.FSignalSearchString));
-if ~isempty(FSignalFile),   ops.FSignalFile = FSignalFile.name;  ops.process.FsignalDone = true;
-else                        ops.FSignalFile =  [];               ops.process.FsignalDone = false; end
+if ~isempty(FSignalFile),   ops.FSignalFile = FSignalFile.name;  ops.process.FsignalDone = true;  ops.process.Fsignaldatenum = FSignalFile.datenum; 
+else                        ops.FSignalFile =  [];               ops.process.FsignalDone = false; ops.process.Fsignaldatenum = 0; 
+end
  
 
 % 4. Check manual ROI selection is done. 
@@ -236,17 +243,29 @@ else                        ops.FSignalFile =  [];               ops.process.Fsi
 % there is F file,  Fsig_<mouse_name>_<date>_plane<#>_ch<#>_MinClust<#>_proc.mat
 
 ProcFile = dir(fullfile(ops.ResultsSavePath,ops.ProcSigSearchString));
-if ~isempty(ProcFile),   ops.ProcFile = ProcFile.name;  ops.process.ProcSignalDone = true;
-else                     ops.ProcFile =  [];            ops.process.ProcSignalDone = false; end
+if ~isempty(ProcFile),   ops.ProcFile = ProcFile.name;  ops.process.ProcSignalDone = true; ops.process.ProcSignaldatenum=ProcFile.datenum;
+else                     ops.ProcFile =  [];            ops.process.ProcSignalDone = false;ops.process.ProcSignaldatenum=0;
+end
    
 % 5. Check Fsig is merged with behavior file 
 % We can check this by inspecting whether 
 % there is F file,  Fsig_<mouse_name>_<date>_plane<#>_ch<#>_MinClust<#>_procSpk.mat
 
 ProcSpkFile = dir(fullfile(ops.ResultsSavePath,ops.ProcSpkSearchString));
-if ~isempty(ProcSpkFile),   ops.ProcSpkFile = ProcSpkFile.name;  ops.process.ProcSpkDone = true;
-else                        ops.ProcSpkFile =  [];               ops.process.ProcSpkDone = false; end
+if ~isempty(ProcSpkFile),   ops.ProcSpkFile = ProcSpkFile.name;  ops.process.ProcSpkDone = true; ops.process.ProcSpkdatenum = ProcSpkFile.datenum;
+else                        ops.ProcSpkFile =  [];               ops.process.ProcSpkDone = false;ops.process.ProcSpkdatenum = 0;
+end
    
+%% 
+ops.ScanFileNames={'SVD','ROI','Fsignal','ProcSignal','ProcSpk'};
+tmptb=struct2table(ops.process);
+ScanFiledatenums=cellfun(@(x) sprintf('%sdatenum',x),ops.ScanFileNames,'UniformOutput',false);
+[latestdatenum,latestInd]=max([tmptb(:,ScanFiledatenums).Variables]);
+ops.process.latestInd    =latestInd;
+ops.process.latestdatenum=latestdatenum;
+ops.process.latestFile    =ops.ScanFileNames{latestInd};
+% non-exist file is 0. exit file is 1. set the latest one as 2. This will be used to select the label in HDBCellSCAN_master list. 
+ops.process.(sprintf('%sDone',ops.process.latestFile))=ops.process.(sprintf('%sDone',ops.process.latestFile))+1;
 
 if ops.process.RegTiffDone, fprintf('1.Registered Image:\tFound in\t%s\n',ops.RegTiffPath{:}), else fprintf('1.Registered Image:\tNot Found\n'); end
 if ops.process.SVDDone, fprintf('                  (SVD File:\tFound in\t%s)\n',ops.SVDFile), else fprintf('SVD File:\tNot Found\n'); end
@@ -771,7 +790,8 @@ for ii=1:length(dbs)
     
     % scan directories to check the progress of data analysis.
     [ops,handles]=scan_db(ops,db,handles);
-    ProcessOrNot  = {'-','*'}; 
+    ProcessOrNot  = {'-','*','o'}; 
+    
     ProcessOrNotString = sprintf('%s%s%s%s%s',...
         ProcessOrNot{ops.process.RegTiffDone+1},...
         ProcessOrNot{ops.process.ROIDone+1},...
