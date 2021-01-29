@@ -3305,21 +3305,9 @@ else
     loaded_teacher_data= [];
 end
 N_imported_data = length(loaded_labels);
-data=double(table2array(data));
+data=
 
-do_padding_inf=1;
-if (do_padding_inf)
-    fprintf('padding inf...\n');
-    for ii=1:size(data,2)
-        tmp=data(:,ii);
-        infind=isinf(tmp);
-        tmpwoinf=tmp; tmpwoinf(infind)=[];
-        tmp(infind)=nanmean(tmpwoinf);
-        data(:,ii)=tmp;
-    end
-end
-
-data = nanzscore(data,0,1);
+data = nanzscore(double(table2array(data)),0,1);
 
 % data= double(data(:,teacher_ind));
 
