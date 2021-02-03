@@ -199,6 +199,7 @@ else % first time to load proc.
     set(h.edit_PixelCountLow,'String', num2str(h.dat.cl.npix_low));
     
     % quadrant view 
+    try delete(h.axis_left.Children); end
     h=init_QV(h);
     
     % start with unit vector map
@@ -1874,7 +1875,7 @@ dy = max_y-min_y;
 if dy==0,    dy=1;end
 yl(1) = min_y-0.1*dy;
 yl(2)=  max_y+0.1*dy;
-
+if any(isnan(yl)), yl=[0 1]; end
 set(h.axes_fluorescence,'XLim',[0 NT],'YLim',yl);
 
 guidata(h.axes_fluorescence,h);
