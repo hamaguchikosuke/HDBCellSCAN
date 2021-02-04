@@ -2566,10 +2566,12 @@ IEh=handles.dat.ImEllipseH;
 if isfield(handles.dat,'reg_data')
     % do nothing
 else
-     handles=local_loadmovie(hObject, eventdata, handles);
-     handles.dat.reg_data.get_single_slice(1);
+      
+        handles=local_loadmovie(hObject, eventdata, handles);
+        handles.dat.reg_data.get_single_slice(1);
+%   
 end
-  [H,W,D]=size(handles.dat.reg_data.buffer);
+[H,W,D]=size(handles.dat.reg_data.buffer);
   
   handles.dat.ImEllipse=[];
 cnt=1;
@@ -2596,7 +2598,7 @@ plot(1:D,[handles.dat.ImEllipse(:).F_Ellip]);
 guidata(hObject,handles);
 
 % --- Executes on button press in pb_DeleteEllipticROIs.
-function pb_DeleteEllipticROIs_Callback(hObject, eventdata, handles)
+function handles=pb_DeleteEllipticROIs_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_DeleteEllipticROIs (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -3667,3 +3669,66 @@ function rb_showneuropil_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to rb_showneuropil (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on button press in pb_Add_EllipticROI.
+function pb_Add_EllipticROI_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_Add_EllipticROI (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+IEh=handles.dat.ImEllipseH;
+
+unique_roi = unique(handles.dat.res.iclust1);
+nROI = max(unique_roi)+1;
+cnt=1;
+for ii=1:length(IEh)
+    if isobject(IEh(ii))
+%         nROI=nROI+1;
+        ROIMask=handles.dat.res.iclust1==1 & IEh(ii).createMask;
+        CC = bwconncomp(ROIMask);
+        [~,max_id] = max(cellfun(@length,CC.PixelIdxList));
+                  % here, pickup the largest ROI in case it was overlapping with the other ROI and 
+%                   ROI region was split.
+        ROIMask=handles.dat.res.iclust1;
+        ROIMask(CC.PixelIdxList{max_id})=nROI;
+        IEhpos=IEh(ii).getPosition;
+        IEhposX=round([IEhpos(1)-IEhpos(3),IEhpos(1)+2*IEhpos(3)]);IEhposX=[IEhposX(1):IEhposX(end)];
+        IEhposY=round([IEhpos(2)-IEhpos(4),IEhpos(2)+2*IEhpos(4)]);IEhposY=[IEhposY(1):IEhposY(end)];
+        opt.hue_range= [0.3 0.31];
+        opt.highlight_labels = nROI; % a vector of indices. ROI belongs to this indices are colored with opt.highlight_color.
+        opt.highlight_color = 1;
+        p=handles.dat.res.probabilities;
+        p(CC.PixelIdxList{max_id})=1;
+        IMG=ROI_gem_img(ROIMask,p,handles.dat.res.M0,opt);
+        CreateOrNot = ROISplit_GUI('title','ROI create',...
+            'String','Create',...
+            'CData',IMG(IEhposY,IEhposX,:),...
+            'PlotData',[NaN,NaN,NaN],...
+            'PlotData_Class',1);
+        switch CreateOrNot
+            case 'Create'
+                handles.dat.res.iclust1(CC.PixelIdxList{max_id})=nROI;
+                handles.dat.res.probabilities(CC.PixelIdxList{max_id})=0.9;
+                tmp= get_stat_from_iclust(handles.dat.res.iclust1==nROI,handles.dat.res.M);
+                tmp.skewF=inf;
+                tmp.SNratio=1;
+                handles.dat.stat(nROI)=tmp;
+                fprintf('iclust=%d is createdd\n',nROI);
+                 nROI=nROI+1;
+            case  'No, I change my mind'
+                  fprintf('User cancelled');
+            otherwise
+                error('Unknown answer %s',CreateOrNot);
+        end
+    end
+   
+end
+handles=update_cl(handles);
+new_ROIs=[(max(unique_roi)+1):length(handles.dat.cl.selected)];
+handles.dat.cl.selected(new_ROIs)=1;
+handles=pb_DeleteEllipticROIs_Callback(hObject, eventdata, handles);
+  handles = buildHue(handles);
+  handles = buildSat(handles);
+handles=redraw_figure(handles);
+guidata(hObject,handles);
