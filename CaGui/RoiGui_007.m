@@ -1372,21 +1372,25 @@ SplitOrNot = ROISplit_GUI('title','ROI split',...
 unique_roi = unique(h.dat.res.iclust1);
 nROI = max(unique_roi);
 switch SplitOrNot
-    case 'Split'
+    case {'Split','Yes'}
         
         for ii=1:Nlabel
             BW=zeros(size(h.dat.res.iclust1));
             BW(ind(idx==ii))=1;
             CC = bwconncomp(BW);
-            [~,max_id] = max(cellfun(@length,CC.PixelIdxList));
-            % here, pickup the largest ROI as sub-divided area, and other 
-%             tiny fragments are left with original iclust number. 
-            nROI= nROI+1;
-            h.dat.res.iclust1(CC.PixelIdxList{max_id})=nROI;
-            tmp= get_stat_from_iclust(h.dat.res.iclust1==nROI,h.dat.res.M);
-            tmp.skewF=inf;
-            tmp.SNratio=1;
-            h.dat.stat(nROI)=tmp;
+                % here, pickup the largest ROI as sub-divided area, and other 
+%             tiny fragments are left with original iclust number.  -> This can cause a problem. We have to define a new LocalCellID to prevent it from being remained in the later analysis.
+% 
+            for jj=1:length(CC.PixelIdxList)
+                %             [~,max_id] = max(cellfun(@length,CC.PixelIdxList));
+
+                nROI= nROI+1;
+                h.dat.res.iclust1(CC.PixelIdxList{jj})=nROI;
+                tmp= get_stat_from_iclust(h.dat.res.iclust1==nROI,h.dat.res.M);
+                tmp.skewF=inf;
+                tmp.SNratio=1;
+                h.dat.stat(nROI)=tmp;
+            end
         end
         %exclude original ROI
      
