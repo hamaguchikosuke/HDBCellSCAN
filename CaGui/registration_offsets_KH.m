@@ -15,7 +15,10 @@ useGPU = getOr(ops, 'useGPU', false);
 
 maskSlope   = getOr(ops, 'maskSlope', 2); % slope on taper mask preapplied to image. was 2, then 1.2
 % SD pixels of gaussian smoothing applied to correlation map (MOM likes .6)
-smoothSigma = 1.15/sqrt(usFac);
+defaultSig = 1.15;
+smoothSigma   = getOr(ops, 'sig', defaultSig); % default value is 1.15;
+if smoothSigma ~= defaultSig, fprintf('SmoothSigma=%f\n',smoothSigma); end; % to notify user that this program is using non-default value
+smoothSigma = smoothSigma/sqrt(usFac);
 
 if nargout > 2 % translation required
     translate = true;
@@ -35,6 +38,15 @@ mY      = max(ys(:)) - 4;
 mX      = max(xs(:)) - 4;
 maskMul = single(1./(1 + exp((ys - mY)/maskSlope)) ./(1 + exp((xs - mX)/maskSlope)));
 maskOffset = mean(refImg(:))*(1 - maskMul);
+
+% fixed gaussian probability mask to limit movement correction: 
+% introduced by KH 20190617
+rs2 = (ys-(1+ly)/2).^2 + (xs-(1+lx)/2).^2;
+gmaskVarDefault = inf;
+gmaskVar   = getOr(ops, 'gmaskVar', gmaskVarDefault); % reduce the probability of picking up the movements correction outside the 30 pixels (~30um for Olympus x25 lens)
+if gmaskVar ~=gmaskVarDefault,    fprintf('gmaskVar=%3.1f\n',gmaskVar); end
+gmask_corr = single(exp(-rs2/gmaskVar)); % this mask is shifted so that it can be applied to the ffted correlation map. 
+
 % Array indices for centre of mass clip window
 [yClipRef, xClipRef] = ndgrid(-2:2, -2:2);
 xClipRef = xClipRef(:);
@@ -101,11 +113,21 @@ for bi = 1:nBatches
     % embed in a larger array and compute 2D inverse fft to get correlation map
     corrUps(yEmbedRef,xEmbedRef,:) = corrMap;
     corrUps = real(ifft2(corrUps));
+    % to reduce the probability of moving too far (added by KH 20190617)
+    corrUps=bsxfun(@times,corrUps,gmask_corr);
     corrClip = corrUps(yCorrRef,xCorrRef,:);
     
     % added by Marius 20.07.2016, smooth the correlation maps
-    corrClipSmooth = my_conv2(corrClip, 1, [1 2]);
+    %     corrClipSmooth = my_conv2(corrClip, 1, [1 2]);
     
+    % added by Kosuke 23.11.2016 to make it option.
+    DefaultPhaseCorrBlurSTD=1.5;
+    ConvSTD = getOr(ops, {'PhaseCorrBlurSTD'}, DefaultPhaseCorrBlurSTD);
+    
+    if ConvSTD~=DefaultPhaseCorrBlurSTD, fprintf('%s=%d','PhaseCorrBlurSTD',ConvSTD); end
+    corrClipSmooth = my_conv2(corrClip, ConvSTD, [1 2]);
+%     corrClipSmooth = bsxfun(@times,corrClipSmooth,gmask_corr);
+  
     % find peak
     [dmax, iy] = max(corrClipSmooth, [], 1);
     iy = gather_try(iy);

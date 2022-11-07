@@ -16,8 +16,8 @@ tempSubPixel = ops.SubPixel;
 ops.SubPixel = Inf;
  fprintf('Reg D(Error)=:')
 for i = 1:ops.NiterPrealign    
-    
-    [dsnew, Corr]  = registration_offsets(data, ops, 1);
+
+    [dsnew, Corr]  = registration_offsets_KH(data, ops, 1);
     dreg  = register_movie(data, ops, dsnew);
     [~, igood] = sort(Corr, 'descend');
     if i<floor(ops.NiterPrealign/2)        

@@ -29,13 +29,16 @@ ops0.RegFileTiffLocation    = ops0.RootStorage ; %'D:/DATA/'; % leave empty to N
 % ops0.doRegistration         = 1; % skip (0) if data is already registered
 ops0.doRegistration         = getOr(ops0, {'doRegistration'}, 1);
 ops0.showTargetRegistration = 1; % shows the image targets for all planes to be registered
-ops0.PhaseCorrelation       = 1; % set to 0 for non-whitened cross-correlation
+ops0.PhaseCorrelation       = getOr(ops0,{'PhaseCorrelation'},true); % set to 0 for non-whitened cross-correlation
 ops0.SubPixel               = Inf; % 2 is alignment by 0.5 pixel, Inf is the exact number from phase correlation
-ops0.NimgFirstRegistration  = 500; % number of images to include in the first registration pass 
+ops0.NimgFirstRegistration  = getOr(ops0,{'NimgFirstRegistration'},500); % number of images to include in the first registration pass, default was 500.
 ops0.nimgbegend             = 250; % frames to average at beginning and end of blocks
-ops0.MaxMovementPixel       = 100; % If the estimated movement shift is more than this value, use interpolation. 
+ops0.MaxMovementPixel       = 50; % If the estimated movement shift is more than this value, use interpolation. 
 ops0.PhaseCorrBlurSTD       = getOr(ops0,{'PhaseCorrBlurSTD'},1.5); % To stabilize the selection of movement shift, filter the phase correlation with Gaussian filter.
-
+% variance of the gaussian mask that will be applied to the correlation matrix of movies to the reference frame.
+% This will reduce the probability of large movements to be chosen. Default is STD=500 pixels
+ops0.gmaskVar               = getOr(ops0,{'gmaskVar'},inf); 
+ops0.IMGLogScaling          = 0; % default is false. When true, IMG = log(IMG+1);
 % cell detection options
 % ops0.clustModel             = 'neuropil'; % standard or neuropil, or fast_spectral (by KH)
 ops0.clustModel             = 'HDBCellScan'; % The fastest hierachical density based cell scan approach (using python internally), by KH 20171102.
@@ -43,7 +46,7 @@ ops0.neuropilSub            = 'surround'; % none, surround or model
 ops0.ShowCellMap            = 1; % during optimization, show a figure of the clusters
 ops0.Nk0                    = 100; % how many clusters to start with
 ops0.Nk                     = 26;  % how many clusters to end with (before anatomical segmentation)
-ops0.sig                    = 0.5;  % spatial smoothing length in pixels; encourages localized clusters
+ops0.sig                    = getOr(ops0,{'sig'},1.15);  % spatial smoothing length in pixels; encourages localized clusters
 
 % -- how many (binned) timepoints to do the SVD based on. When the total frame is 30,000, and NavgFramesSVD = 5000,
 % it will calculate the average of each (30000/5000 =) 6 frames and use for SVD calculation.

@@ -48,8 +48,8 @@ else
     errordlg(sprintf('%s does not exist!',LoadName));
 end
 
-[SavePath,SaveName,Ext]=fileparts(SaveName);
-
+[~,SaveName,Ext]=fileparts(SaveName);
+SavePath=ops.ResultsSavePath;
 if ops.newFile
     SaveName = [SaveName,'_new'];
 end
@@ -68,7 +68,15 @@ Nk       = numel(data.stat); % all ROIs including parents
 % end
 
 if UseProcFile == 1
-    useCells = find(data.cl.selected);
+    %     useCells = find(data.cl.selected);%  this excludes the background rois or unselected ones, but that's not good.
+    if isnumeric(data.cl.statTBL.npix)
+        BGind=data.cl.statTBL.npix>0.1*numel(data.res.iclust); % roi that occupy 10% of the image is considered as background.
+    elseif iscell(data.cl.statTBL.npix)
+        BGind=[data.cl.statTBL.npix{:}] > 0.1*numel(data.res.iclust);
+    else
+        error;
+    end
+    useCells = setdiff(1:length(data.cl.selected),find(BGind)); % >20201230. we analyze all the roi's data. This might change the behavior of the later process... 1 is always the background.
 else
     useCells = find([data.stat.igood]);
 end
@@ -86,7 +94,9 @@ for ii=1:length(useCells)
 %     temp=zeros(LyR,LxR);
 %     temp(ipix)=1;
 %     imagesc(temp); title(num2str(ii)); pause; 
+if ipix>0
     cellFields(ii,ipix)=1; % fast data filling 
+end
 end
  allField=squeeze(sum(cellFields,1));
 ops.totPixels=LxU;
@@ -105,7 +115,9 @@ if ops.getNeuropil
         tmp=squeeze(neuropMasks(mCell,:,:));
         data.stat(k).ipix_neuropil=find(tmp);
     end
+    data.stat(find(BGind)).ipix_neuropil=[];
 end
+
 
 %% get signals and neuropil
 if ops.useSVD == 0
@@ -130,7 +142,7 @@ if ops.useSVD == 0
     
     StartInd=MTiff.CumNSeries(1:end-1)+1;
     EndInd = MTiff.CumNSeries(2:end);
-
+%%
     for ii=1:length(MTiff.nSeries)
 %         mov = fread(fid,  LyU*LxU*nimgbatch, '*int16');
         index = StartInd(ii):EndInd(ii);
@@ -146,7 +158,7 @@ if ops.useSVD == 0
         for k = 1:Nk
             if ops.getSignal
                 ipix = data.stat(k).ipix;
-                if ~isempty(ipix)
+                if ~isempty(ipix) && length(ipix)>0 && all(ipix~=0)
                     % F(k,ix + (1:NT)) = stat(k).lambda' * data(ipix,:);
                     F(k,index) = mean(mov(ipix,:), 1);
                 end
@@ -155,6 +167,10 @@ if ops.useSVD == 0
                 ipix_neuropil= data.stat(k).ipix_neuropil;
                 if ~isempty(ipix_neuropil)
                     Fneu(k,index) = mean(mov(ipix_neuropil,:), 1);
+                elseif ipix==0
+                    Fneu(k,index)= NaN(1,size(mov,2));
+                else% this ROI has no neuropil defined. It is either background, or something weird happend.
+                    Fneu(k,index)=F(k,index);
                 end
             end
         end
@@ -221,7 +237,7 @@ else % ops.useSVD == 1
         end
     end
 end
-
+%%
 if UseProcFile
     if ops.getSignal
         data.F.Fcell = Fcell;

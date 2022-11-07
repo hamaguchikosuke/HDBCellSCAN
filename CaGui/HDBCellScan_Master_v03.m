@@ -160,6 +160,8 @@ ops = init_ops(ops);
 ops=build_ops_for_HDBCellSCAN(db,ops);
 
 % check registered tiff file exists
+LatestDate=cell(length(ops.fsroot),2);
+
 ops.process.RegTiffDone = true;
 for ii=1:length(ops.fsroot)
     if isempty(ops.fsroot{ii})
@@ -172,6 +174,8 @@ for ii=1:length(ops.fsroot)
     if ~exist(tmp_fsroot.name)
         ops.process.RegTiffDone = false;  
     else
+        S=dir(tmp_fsroot.name);
+%         if LatestDate{ii,1}<S.datenum, LatestDate(ii)
         if isfield(tmp_fsroot,'folder')
         ops.RegTiffPath{ii}=tmp_fsroot.folder; 
         else
@@ -215,20 +219,23 @@ switch handles.DB.ops.selected_analysis_ver
 end
 
 SVDFile = dir(fullfile(ops.ResultsSavePath,ops.SVDSearchString));
-if ~isempty(SVDFile),   ops.SVDFile = SVDFile.name;  ops.process.SVDDone = true;
-else                    ops.SVDFile =  [];           ops.process.SVDDone = false; end
+if ~isempty(SVDFile),   ops.SVDFile = SVDFile.name;  ops.process.SVDDone = true; ops.process.SVDdatenum=SVDFile.datenum;
+else                    ops.SVDFile =  [];           ops.process.SVDDone = false;ops.process.SVDdatenum=0;
+end
 
 ROIFile = dir(fullfile(ops.ResultsSavePath,ops.ROISearchString));
-if ~isempty(ROIFile),   ops.ROIFile = ROIFile.name;  ops.process.ROIDone = true;
-else                    ops.ROIFile =  [];           ops.process.ROIDone = false; end
+if ~isempty(ROIFile),   ops.ROIFile = ROIFile.name;  ops.process.ROIDone = true; ops.process.ROIdatenum=ROIFile.datenum;
+else                    ops.ROIFile =  [];           ops.process.ROIDone = false;ops.process.ROIdatenum=0;
+end
   
 % 3. Check signal is calculated
 % We can check this by inspecting whether 
 % there is F file,  Fsig_<mouse_name>_<date>_plane<#>_ch<#>_MinClust<#>.mat
 
 FSignalFile = dir(fullfile(ops.ResultsSavePath,ops.FSignalSearchString));
-if ~isempty(FSignalFile),   ops.FSignalFile = FSignalFile.name;  ops.process.FsignalDone = true;
-else                        ops.FSignalFile =  [];               ops.process.FsignalDone = false; end
+if ~isempty(FSignalFile),   ops.FSignalFile = FSignalFile.name;  ops.process.FsignalDone = true;  ops.process.Fsignaldatenum = FSignalFile.datenum; 
+else                        ops.FSignalFile =  [];               ops.process.FsignalDone = false; ops.process.Fsignaldatenum = 0; 
+end
  
 
 % 4. Check manual ROI selection is done. 
@@ -236,17 +243,29 @@ else                        ops.FSignalFile =  [];               ops.process.Fsi
 % there is F file,  Fsig_<mouse_name>_<date>_plane<#>_ch<#>_MinClust<#>_proc.mat
 
 ProcFile = dir(fullfile(ops.ResultsSavePath,ops.ProcSigSearchString));
-if ~isempty(ProcFile),   ops.ProcFile = ProcFile.name;  ops.process.ProcSignalDone = true;
-else                     ops.ProcFile =  [];            ops.process.ProcSignalDone = false; end
+if ~isempty(ProcFile),   ops.ProcFile = ProcFile.name;  ops.process.ProcSignalDone = true; ops.process.ProcSignaldatenum=ProcFile.datenum;
+else                     ops.ProcFile =  [];            ops.process.ProcSignalDone = false;ops.process.ProcSignaldatenum=0;
+end
    
 % 5. Check Fsig is merged with behavior file 
 % We can check this by inspecting whether 
 % there is F file,  Fsig_<mouse_name>_<date>_plane<#>_ch<#>_MinClust<#>_procSpk.mat
 
 ProcSpkFile = dir(fullfile(ops.ResultsSavePath,ops.ProcSpkSearchString));
-if ~isempty(ProcSpkFile),   ops.ProcSpkFile = ProcSpkFile.name;  ops.process.ProcSpkDone = true;
-else                        ops.ProcSpkFile =  [];               ops.process.ProcSpkDone = false; end
+if ~isempty(ProcSpkFile),   ops.ProcSpkFile = ProcSpkFile.name;  ops.process.ProcSpkDone = true; ops.process.ProcSpkdatenum = ProcSpkFile.datenum;
+else                        ops.ProcSpkFile =  [];               ops.process.ProcSpkDone = false;ops.process.ProcSpkdatenum = 0;
+end
    
+%% 
+ops.ScanFileNames={'SVD','ROI','Fsignal','ProcSignal','ProcSpk'};
+tmptb=struct2table(ops.process);
+ScanFiledatenums=cellfun(@(x) sprintf('%sdatenum',x),ops.ScanFileNames,'UniformOutput',false);
+[latestdatenum,latestInd]=max([tmptb(:,ScanFiledatenums).Variables]);
+ops.process.latestInd    =latestInd;
+ops.process.latestdatenum=latestdatenum;
+ops.process.latestFile    =ops.ScanFileNames{latestInd};
+% non-exist file is 0. exit file is 1. set the latest one as 2. This will be used to select the label in HDBCellSCAN_master list. 
+ops.process.(sprintf('%sDone',ops.process.latestFile))=ops.process.(sprintf('%sDone',ops.process.latestFile))+1;
 
 if ops.process.RegTiffDone, fprintf('1.Registered Image:\tFound in\t%s\n',ops.RegTiffPath{:}), else fprintf('1.Registered Image:\tNot Found\n'); end
 if ops.process.SVDDone, fprintf('                  (SVD File:\tFound in\t%s)\n',ops.SVDFile), else fprintf('SVD File:\tNot Found\n'); end
@@ -281,8 +300,14 @@ Val=get(handles.lb_PlaneCh,'Value');
         Val=1:length(S);
     end
     
-if ops.process.RegTiffDone
- set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value',Val );
+% Before image registration, plane_ch dir does not exist. After collecting processed data into a single hard disk, 
+% tiff files (except for x4 stacked images) are not copied, and this
+% program will take it as "Not registered". In this case, existence of
+% plane_ch folder will tell the user that image registered data alredy
+% exists. 
+
+if ops.process.RegTiffDone || ~isempty(S) 
+    set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value',Val );
 %     set(handles.lb_PlaneCh,'String',{PlaneCh.name},'Value', 1:length(S) );
   
 end
@@ -308,7 +333,9 @@ else,                       set(handles.text_ProcFile,'String','Not Found'); end
 if ops.process.ProcSpkDone, set(handles.text_ProcSpk,'String','Found'), 
 else,                       set(handles.text_ProcSpk,'String','Not Found'); end
 
-
+% We may also need to update PlaneCh panel for each data entry. 
+% Check whether this does not cause any problem .
+[ops,handles]=update_PlaneChString(ops,handles);
 
 % --- Executes during object creation, after setting all properties.
 function lb_sessions_CreateFcn(hObject, eventdata, handles)
@@ -456,13 +483,14 @@ toc(TSTART);
 
 %%%%% cleanup %%%%%
 try
-    for ii=1:length(ops1)
+    for ii=1:length(ops1)       
         if ops1{ii}.DeleteBin
             fclose('all');
             delete(ops1{ii}.RegFile);        % delete temporary bin file
         end
     end
 end
+gong(5,400,1);pause(1);gong(5,400,1);pause(1);gong(5,400,1);
 
 function ops1=update_reg(ops0,handles)
  
@@ -470,7 +498,8 @@ function ops1=update_reg(ops0,handles)
 ops1 = [];
 if get(handles.rb_imagereg,'Value') && ...
         (handles.DB.redo_analysis || (~ops0.process.RegTiffDone || ~ops0.process.SVDDone) )
-     ops1         = reg2P_kh006(ops0);  %  ver.6. GrinLens mode is added. 
+        ops1         = reg2P_kh007(ops0);    %  ver.7. GrinLens mode is added. 
+%      ops1         = reg2P_kh006(ops0);  %  ver.6. GrinLens mode is added. 
 %       ops1         = reg2P_kh005(ops0);  % ver.5
      % At this point, ops1 contains Plane x View x Channel size. 
     % get_SVD function relies on temporally generated temp_file, so always use right after reg2P. 
@@ -595,7 +624,7 @@ if  get(handles.rb_ManualROI,'Value') && ...
             % <To Dos>: load Fsig file automatically.
             
         else
-            errordlg(sprintf('%s does not exist.', ROIFile));
+            errordlg(sprintf('%s does not exist.', FsigFile));
         end
     end
 
@@ -623,7 +652,7 @@ if  get(handles.rb_FinalizeSignal,'Value') && ...
           sprintf('Fsig_%s_%s_%s_MinClust%d_procSpk.mat', ops0.mouse_name, ops0.date, PlaneChString{pp},MinClustSize));
      
       
-      if exist(ProcSpkFile,'file') & handles.rb_updateSpikeOnly.Value
+      if exist(ProcFile,'file') & handles.rb_updateSpikeOnly.Value
        
           % In case update (ProcSpkFile already exists but overwrite)
           proc2procspk_02(ProcFile);
@@ -633,8 +662,23 @@ if  get(handles.rb_FinalizeSignal,'Value') && ...
 
           % tmp.ops contains previous options. ops0 inherits latest options.
           % ops1{pp} needs to be constructed based on ops0, but otherwise use old values
-          ops1{pp} = update_ops(ops0,tmp.ops);
+           ops1{pp} = update_ops(ops0,tmp.ops);
           
+% the following code ask user to decide where to save. When commented out, always saved under ops1{pp}.ResultsSavePath            
+%           if ~strncmp(ops0.ResultsSavePath , ops1.ResultsSavePath,length(ops0.ResultsSavePath))
+%               ButtonName = questdlg('ResultsSavePath conflict: likely you worked on a local _proc file, and update the signal by using the original data source. Which one to use?', ...
+%                   'Conflict ', ...
+%                   ProcFile, ops0.ResultsSavePath,'Cancel');
+%               switch ButtonName
+%                   case {ProcFile,ops0.ResultsSavePath}
+%                       fprintf('Use %s\n',ButtonName);
+%                   case 'Cancel'
+%                       disp('User cancelled');
+%                       return;
+%               end % switch
+%               
+%           end
+         
           ops1{pp}.PlaneChString = PlaneChString{pp};
           
           neuropilSub    = 'surround'; %getOr(ops1, {'neuropilSub'}, 'surround')
@@ -747,7 +791,8 @@ for ii=1:length(dbs)
     
     % scan directories to check the progress of data analysis.
     [ops,handles]=scan_db(ops,db,handles);
-    ProcessOrNot  = {'-','*'}; 
+    ProcessOrNot  = {'-','*','o'}; 
+    
     ProcessOrNotString = sprintf('%s%s%s%s%s',...
         ProcessOrNot{ops.process.RegTiffDone+1},...
         ProcessOrNot{ops.process.ROIDone+1},...

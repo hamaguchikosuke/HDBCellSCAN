@@ -91,16 +91,29 @@ tmp = zeros(sum(T),Ncell);
 percent_done = 0;
 print_increment = 5;
 fprintf(1, 'Estimating spikes from Ca trace ...\n');
+cnt=0;
+% parpool(2);
+myfigure('dF');clf;
+
 parfor ii=1:length(cellindex)
-%      fraction_done = 100 * (ii / length(cellindex));
-%         if (fraction_done >= percent_done)
-%             fprintf(1, '\b\b\b%d%%', percent_done);
-%             percent_done = percent_done + print_increment;
-%         end
-%     fprintf('%d/%d done\n',jj,length(cellindex));
+    %      fraction_done = 100 * (ii / length(cellindex));
+    %         if (fraction_done >= percent_done)
+    %             fprintf(1, '\b\b\b%d%%', percent_done);
+    %             percent_done = percent_done + print_increment;
+    %     fprintf('%03d/%03d done\n',jj,length(cellindex));
+    %         end
+    
+%     fprintf('%03d/%03d done\n',ii,length(cellindex));
+    
     dFtmp = dF(:,ii);
     dFtmp = dFtmp-min(dFtmp)+1;
-    tmp(:,ii)=deconv_kh_002(dFtmp);
+    plot(dFtmp);drawnow;
+    if any(isnan(dFtmp))
+        fprintf('%d contains NaN. Set spike values to NaN. Skipped',ii)
+        tmp(:,ii)=NaN;
+    else
+        tmp(:,ii)=deconv_kh_002(dFtmp);
+    end
 end
  fprintf(1, 'Done\n');
  StartInd = [1,cumsum(T)+1];StartInd = StartInd(1:end-1);

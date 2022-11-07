@@ -12,7 +12,7 @@ Ca_channel          = getOr(ops, {'Ca_channel'}, 1);
 Ref_channel         = getOr(ops, {'Align_channel'}, 2);
 
 ops.RegShape            = getOr(ops, {'RegShape'},'Square');
-
+fprintf('RegShape=%s\n',ops.RegShape)
 
 if length(Ca_channel)>nchannels
     error('Length of Ca_channel must be larger than nchannels')
@@ -60,7 +60,7 @@ switch ops.RegShape
         ops.xFOVs = xFOVs;
         ops.yFOVs = yFOVs;
 
-    case 'GrinLens'
+    case {'GrinLens','TopLeft','TopCenter','TopRight','CenterLeft'}
         [xFOVs, yFOVs] = get_xyFOVs(ops,ops.RegShape);
         ops.NumSplitViews=1;
         ops.xFOVs = xFOVs;
@@ -280,7 +280,7 @@ for kk = 1:length(fs) % For each SubDir
                                     dreg(yFOVs(:,ll), xFOVs(:,ll), indxr)        = ...
                                         register_movie(data(yFOVs(:,ll), xFOVs(:,ll), indxr), ...
                                         ops1{1,ll,cc}, dsall(indxr,:,ll));
-                                case 'GrinLens'
+                                case {'GrinLens','TopLeft','TopCenter','TopRight','CenterLeft'}
                                     dreg(:,:, indxr)        = ...
                                         register_movie(data(:,:, indxr), ...
                                         ops1{1,ll,cc}, dsall(indxr,:,ll));
@@ -304,7 +304,7 @@ for kk = 1:length(fs) % For each SubDir
                         switch ops.RegShape
                             case 'Square'
                                 dwrite = dreg(yFOVs(:,ll),xFOVs(:,ll),indframes);
-                            case 'GrinLens'
+                            case {'GrinLens','TopLeft','TopCenter','TopRight','CenterLeft'}
                                 dwrite = dreg(:,:,indframes);
                             otherwise
                                 error('Unknown regshape option %s',ops.RegShape);

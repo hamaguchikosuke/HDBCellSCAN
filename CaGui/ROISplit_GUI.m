@@ -22,7 +22,7 @@ function varargout = ROISplit_GUI(varargin)
 
 % Edit the above text to modify the response to help ROISplit_GUI
 
-% Last Modified by GUIDE v2.5 08-Nov-2017 20:17:12
+% Last Modified by GUIDE v2.5 04-Feb-2021 14:43:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -70,7 +70,7 @@ if(nargin > 3)
             case 'title'
                 set(hObject, 'Name', varargin{index+1});
             case 'string'
-                set(handles.text1, 'String', varargin{index+1});
+                set(handles.pb_YES, 'String', varargin{index+1});
             case 'cdata'
                 IconData = varargin{index+1};
             case 'plotdata'
@@ -97,7 +97,7 @@ if isempty(gcbf)
     ScreenSize=get(0,'ScreenSize');
     set(0,'Units',ScreenUnits);
 
-    FigPos(1)=1/2*(ScreenSize(3)-FigWidth);
+    FigPos(1)=(ScreenSize(3)-FigWidth);
     FigPos(2)=2/3*(ScreenSize(4)-FigHeight);
 else
     GCBFOldUnits = get(gcbf,'Units');
@@ -161,9 +161,9 @@ varargout{1} = handles.output;
 % The figure can be deleted now
 delete(handles.figure1);
 
-% --- Executes on button press in pb_Split.
-function pb_Split_Callback(hObject, eventdata, handles)
-% hObject    handle to pb_Split (see GCBO)
+% --- Executes on button press in pb_YES.
+function pb_YES_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_YES (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 

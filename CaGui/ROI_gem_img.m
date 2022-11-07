@@ -18,8 +18,7 @@ function RGB=ROI_gem_img(labels,probabilities,M,varargin)
 % usage2)
 % RGB = ROI_gem_img(labels,probabilities,M,opt);
 % opt: options
-% opt.hue_range : range of hues, ex) [0.2 0.21] is light green, [0 0.01]
-% is deep red, [0.7 0.71] is blue. 
+% opt.hue_range : range of hues, ex) [0.2 0.21] is light green, [0 0.01] is deep red, [0.7 0.71] is blue. 
 % opt.highlight_labels: a vector of indices. ROI belongs to this indices are colored with opt.highlight_color. 
 % opt.highlight_color : a vector of indices to color specific ROIs. 
 % by Kosuke Hamaguchi 20171117

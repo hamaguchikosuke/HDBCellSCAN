@@ -18,6 +18,12 @@ else
 end
 % End initialization code - DO NOT EDIT
 
+%% data dependencies 
+%  
+%   h.dat.stat=update_stat(h.dat.res.iclust1,h.dat.res.M); 
+%  h=init_cl(h);     % cluster selection and related variables
+%    h=update_Ftrace(h); % inside, h.dat.cl.statTBL.skewF is updated.
+%%
 % --- Executes just before RoiGui_007 is made visible.
 function RoiGui_007_OpeningFcn(hObject, eventdata, h, varargin)
 % This function has no output args, see OutputFcn.
@@ -94,7 +100,7 @@ function varargout = RoiGui_007_OutputFcn(hObject, eventdata, h)
 % varargout  cell array for returning output args (see VARARGOUT);
 varargout{1} = h.output;
 
-function pb_LoadPlane_Callback(hObject, eventdata, h,varargin)
+function h=pb_LoadPlane_Callback(hObject, eventdata, h,varargin)
 % [filename1,filepath1]=uigetfile('\\zserver\Lab\Share\Marius\', 'Select Data File');
 
 if nargin>=4
@@ -119,9 +125,14 @@ fprintf('Loading %s...\n',LOADNAME);
 
 h.dat = load(LOADNAME);
 h.dat.filename = LOADNAME;
+
+
 [filepath1,filename1,ext]=fileparts(LOADNAME);
 set(h.figure1, 'Name', filename1);
 
+%% initialize images 
+% delete(h.axes_left.Children);
+%% 
 
 
 % if flag
@@ -132,12 +143,23 @@ set(h.figure1, 'Name', filename1);
 % keyboard;
 if isfield(h.dat, 'dat')
     h.dat = h.dat.dat;
+    fprintf('h.dat.dat -> h.dat\n')
+    h.dat.stat=update_stat(h.dat.res.iclust,h.dat.res.M); % update stat at loading point.
+%     h=update_Ftrace(h);
+%     h=update_cl(h);     % cluster selection and related variables
+   
 elseif isfield(h.dat.ops,'processed_date')
+    fprintf('processed data \n')
     if ~isfield(h.dat.res,'iclust1')
      h.dat.res.iclust1 = h.dat.res.iclust;
     end
-    % do nothing
-else
+ 
+    h.dat.stat=update_stat(h.dat.res.iclust,h.dat.res.M); % update stat at loading point.
+      h=init_QV(h);
+%     h=update_Ftrace(h);
+%     h=update_cl(h);     % cluster selection and related variables
+    
+else % first time to load proc. 
     
     h.dat.filename = getOr(h.dat,'filename',fullfile(filepath1, filename1));
     
@@ -177,6 +199,7 @@ else
     set(h.edit_PixelCountLow,'String', num2str(h.dat.cl.npix_low));
     
     % quadrant view 
+    try delete(h.axis_left.Children); end
     h=init_QV(h);
     
     % start with unit vector map
@@ -218,6 +241,16 @@ else
     end
 end
 
+%% added 20210118 to make sure all the scalar stats are scalars in vector, not in cells. -> should not be necessary if statTBL is correctly updated after splitting and merging in get_stat_from_iclust
+% scalar_vars_in_statTBL={'mrs','npix','mrs0','Compactness', 'V','Solidity','Eccentricity','Perimeter','SNratio','skewF'};
+% for vv=1:length(scalar_vars_in_statTBL)
+%     varname=scalar_vars_in_statTBL{vv};
+%     if iscell(h.dat.cl.statTBL.(varname))
+%         varval=[h.dat.cl.statTBL.(varname){:}]; % we found some statTBL values are empty, and that's why it became cell array to keep it empty.
+%         h.dat.cl.statTBL.(varname)=varval(:);
+%     end
+% end
+%%
 h.dat.graph.maxmap = 1;
 ops = h.dat.ops;
 
@@ -242,7 +275,10 @@ end
 
 h.dat.procmap = 0;
 
+h=update_cl(h);    
 h=update_Ftrace(h); % inside, h.dat.cl.statTBL.skewF is updated.
+h.dat.stat=table2struct(h.dat.cl.statTBL);
+
 h = ApplyROIFilter(h);
 h.dat.F.ichosen_append = [];
 h = buildSat(h);
@@ -333,49 +369,105 @@ h.dat.cl.type_number_table = ...
     
 function h=update_cl(h)
 
-for ii=1:length(h.dat.stat)
-    if isempty(h.dat.stat(ii).Compactness)
-        h.dat.stat(ii).Compactness=h.dat.stat(ii).mrs/h.dat.stat(ii).mrs0;
-    end
-end
+% should be no longer necessary, as it is taken care by get_stat_from_iclust 
 
-TableProperties = {'Properties','Row','Variables'};
-VarsToUpdate   = setdiff(fieldnames(h.dat.cl.statTBL),fieldnames(h.dat.stat));
-VarsToUpdate   = setdiff(VarsToUpdate,TableProperties);
-
-% rescure variables that are not included in h.dat.stat but in h.dat.cl.statTBL
-for ss=VarsToUpdate'
- tmp.(ss{1})= h.dat.cl.statTBL.(ss{1});
-end
-
+% for ii=1:length(h.dat.stat)
+%     if isempty(h.dat.stat(ii).Compactness)
+%         h.dat.stat(ii).Compactness=h.dat.stat(ii).mrs/h.dat.stat(ii).mrs0;
+%     end
+% end
 
 h.dat.cl.statTBL = struct2table(h.dat.stat);
 N = length(h.dat.stat);
+% number of new entries, cl.selected is not updated yet. 
 dN = N-length(h.dat.cl.selected);
 
-h.dat.cl.selected      = cat(1,h.dat.cl.selected,ones(dN,1));
+if dN>0
+    
+VarsToUpdate   = setdiff(h.dat.cl.statTBL.Properties.VariableNames,fieldnames(h.dat.stat));
 
-for ss=VarsToUpdate'
-    switch ss{1}
-        case 'skewF'
-             h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),inf(dN,1));
-        case 'SNratio'
-             h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),ones(dN,1));
-        otherwise
-            error('Unknown variables %s',ss);
+if ~isempty(VarsToUpdate)
+    % rescue variables that are not included in h.dat.stat but in h.dat.cl.statTBL
+    for ss=VarsToUpdate'
+        tmp.(ss{1})= h.dat.cl.statTBL.(ss{1});
     end
 end
 
+h.dat.cl.selected      = cat(1,h.dat.cl.selected,ones(dN,1));
+    if ~isempty(VarsToUpdate)
+ 
+    for ss=VarsToUpdate'
+        switch ss{1}
+            case 'skewF'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),inf(dN,1));
+            case 'SNratio'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),ones(dN,1));
+            otherwise
+                error('Unknown variables %s',ss);
+        end
+    end
+    end
+    
+    rng('default');
+    h.dat.cl.rands_orig   = .1 + .8 * rand(N,1);
+    h.dat.cl.rands        = h.dat.cl.rands_orig;
+    h.dat.cl.manualmerge  = cat(1,h.dat.cl.manualmerge,zeros(dN,1));
+    h.dat.cl.svm_class    = cat(1,h.dat.cl.svm_class,  zeros(dN,1));
+    h.dat.cl.svm_predicted_type   = cat(1,h.dat.cl.svm_predicted_type,  zeros(dN,1));
+    h.dat.cl.manual       = cat(1,h.dat.cl.manual,ones(dN,1));
+    h.dat.cl.redcell      = cat(1,h.dat.cl.redcell,zeros(dN,1));
 
-rng('default');
-h.dat.cl.rands_orig   = .1 + .8 * rand(N,1);
-h.dat.cl.rands        = h.dat.cl.rands_orig;
-h.dat.cl.manualmerge  = cat(1,h.dat.cl.manualmerge,zeros(dN,1));
-h.dat.cl.svm_class    = cat(1,h.dat.cl.svm_class,  zeros(dN,1));
-h.dat.cl.svm_predicted_type   = cat(1,h.dat.cl.svm_predicted_type,  zeros(dN,1));
-h.dat.cl.manual       = cat(1,h.dat.cl.manual,ones(dN,1));
-h.dat.cl.redcell      = cat(1,h.dat.cl.redcell,zeros(dN,1));
+end
 
+function h=add_cl(h,dN)
+% add new rows of statTBL for split or merged ROI. 
+
+% should be no longer necessary, as it is taken care by get_stat_from_iclust 
+
+% for ii=1:length(h.dat.stat)
+%     if isempty(h.dat.stat(ii).Compactness)
+%         h.dat.stat(ii).Compactness=h.dat.stat(ii).mrs/h.dat.stat(ii).mrs0;
+%     end
+% end
+
+h.dat.cl.statTBL = struct2table(h.dat.stat);
+
+if dN>0
+    
+VarsToUpdate   = setdiff(h.dat.cl.statTBL.Properties.VariableNames,fieldnames(h.dat.stat));
+
+if ~isempty(VarsToUpdate)
+    % rescue variables that are not included in h.dat.stat but in h.dat.cl.statTBL
+    for ss=VarsToUpdate'
+        tmp.(ss{1})= h.dat.cl.statTBL.(ss{1});
+    end
+end
+
+h.dat.cl.selected      = cat(1,h.dat.cl.selected,ones(dN,1));
+%     if ~isempty(VarsToUpdate)
+ 
+    for ss=VarsToUpdate'
+        switch ss{1}
+            case 'skewF'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),inf(dN,1));
+            case 'SNratio'
+                h.dat.cl.statTBL.(ss{1})= cat(1,tmp.(ss{1}),ones(dN,1));
+            otherwise
+                error('Unknown variables %s',ss);
+        end
+    end
+%     end
+    
+    rng('default');
+    h.dat.cl.rands_orig   = .1 + .8 * rand(N,1);
+    h.dat.cl.rands        = h.dat.cl.rands_orig;
+    h.dat.cl.manualmerge  = cat(1,h.dat.cl.manualmerge,zeros(dN,1));
+    h.dat.cl.svm_class    = cat(1,h.dat.cl.svm_class,  zeros(dN,1));
+    h.dat.cl.svm_predicted_type   = cat(1,h.dat.cl.svm_predicted_type,  zeros(dN,1));
+    h.dat.cl.manual       = cat(1,h.dat.cl.manual,ones(dN,1));
+    h.dat.cl.redcell      = cat(1,h.dat.cl.redcell,zeros(dN,1));
+
+end
 
 function h=init_QV(h)
  % set all quadrants as not visited
@@ -439,12 +531,19 @@ else
     % raw trace version
     [skewF, SNratio,C_of_zF, C_of_dzF]=get_F_dependent_stats(h.dat.F.trace);
 end
+
+dN=height(h.dat.cl.statTBL)-length(skewF);
+if dN>0
+    skewF=cat(1,skewF(:),inf(dN,1));
+    SNratio=cat(1,SNratio(:),ones(dN,1));
+end
 h.dat.cl.statTBL.skewF =skewF;
 h.dat.cl.statTBL.SNratio  = SNratio;
 
 h.dat.cl.C_of_zF=C_of_zF;
 h.dat.cl.C_of_dzF=C_of_dzF;
 h.dat.cl.IDX = recalc_IDX(h);
+
 
 % if (use_trueF_for_skewF)
 %     % true F version
@@ -615,7 +714,8 @@ fprintf('Saving results %s ...\n',filename)
 
 dat = h.dat;
 dat.res.iclust = dat.res.iclust1; % overwrite iclust 
-dat.stat=update_stat(dat.res.iclust,dat.res.M); 
+% this eliminates some split ROI's area to be zero, and makes it difficult to calculate the later process. 
+ dat.stat=update_stat(dat.res.iclust,dat.res.M); % <We should update it at loading point>
 
 dat.F.trace = []; % no longer needed
 dat.F.truetrace =[]; % no longer needed
@@ -725,15 +825,17 @@ quadrant(hObject, h, iy, ix);
 paint_quadbutton(h, iy, ix);
 
 function paint_quadbutton(h, iy, ix)
-for j = 1:3
-    for i = 1:3
-        if h.QV.quadvalue(j,i)==1
-            set(h.(sprintf('Q%d%d', j,i)), 'BackgroundColor','yellow'); 
+   
+    for j = 1:3
+        for i = 1:3
+            if h.QV.quadvalue(j,i)==1
+                set(h.(sprintf('Q%d%d', j,i)), 'BackgroundColor','yellow');
+            end
         end
     end
-end
-set(h.(sprintf('Q%d%d', iy,ix)), 'BackgroundColor','red'); 
-
+    
+    set(h.(sprintf('Q%d%d', iy,ix)), 'BackgroundColor','red');
+    
 % --- Executes on button press in full.
 function full_Callback(hObject, eventdata, h)
 %QV: quadrant view
@@ -1177,7 +1279,10 @@ y1 = min(max(1, round(y1)), h.dat.res.Ly);
 hold on; plotH=plot(x1,y1,'ro');
 
 % another center of k-means clustering
+
+set(h.left_imageH,'HitTest','off'); % to avoid evoking the callback again 
 x2 = ceil(ginput(1));
+set(h.left_imageH,'HitTest','on');
 y2 = x2(2);
 x2 = x2(1);
 
@@ -1201,6 +1306,7 @@ else
     if exist(SVDFile,'file')    
         waitH = waitbar(0.2,sprintf('Loding %s',SVDFile),'Name','Loading SVD to calculate k-means..');
         h.dat.svd=   load(SVDFile, 'U','Sv');
+        guidata(hObject,h);
         waitbar(1,waitH);
         delete(waitH);
     else
@@ -1266,22 +1372,30 @@ SplitOrNot = ROISplit_GUI('title','ROI split',...
 unique_roi = unique(h.dat.res.iclust1);
 nROI = max(unique_roi);
 switch SplitOrNot
-    case 'Split'
+    case {'Split','Yes'}
+        
         for ii=1:Nlabel
             BW=zeros(size(h.dat.res.iclust1));
             BW(ind(idx==ii))=1;
             CC = bwconncomp(BW);
-            [~,max_id] = max(cellfun(@length,CC.PixelIdxList));
-            % here, pickup the largest ROI as sub-divided area, and other 
-%             tiny fragments are left with original iclust number. 
-            nROI= nROI+1;
-            h.dat.res.iclust1(CC.PixelIdxList{max_id})=nROI;
-            h.dat.stat(nROI)= get_stat_from_iclust(h.dat.res.iclust1==nROI,h.dat.res.M);
-            
+                % here, pickup the largest ROI as sub-divided area, and other 
+%             tiny fragments are left with original iclust number.  -> This can cause a problem. We have to define a new LocalCellID to prevent it from being remained in the later analysis.
+% 
+            for jj=1:length(CC.PixelIdxList)
+                %             [~,max_id] = max(cellfun(@length,CC.PixelIdxList));
+
+                nROI= nROI+1;
+                h.dat.res.iclust1(CC.PixelIdxList{jj})=nROI;
+                tmp= get_stat_from_iclust(h.dat.res.iclust1==nROI,h.dat.res.M);
+                tmp.skewF=inf;
+                tmp.SNratio=1;
+                h.dat.stat(nROI)=tmp;
+            end
         end
         %exclude original ROI
      
         h.dat.cl.manual(target)=-0.5;
+        h.dat.cl.selected(target)=0; % set the original unselected. 
         
         h=update_cl(h);
         fprintf('iclust=%d is split into %d and %d\n',target,nROI-1,nROI);
@@ -1293,6 +1407,14 @@ switch SplitOrNot
     otherwise
         error('Unknown answer %s',SplitOrNot)
 end
+
+% come back to display mode        
+
+% set(h.left_imageH,'Hittest','on');
+% h.ModeSelectionButtonGroup.SelectedObject=h.tg_DisplayMode;
+
+h=redraw_figure(h);
+h=update_figure(h);
 guidata(hObject,h);
 
  % cell selection function
@@ -1379,12 +1501,23 @@ fprintf('\nclust=%d(iscell=%2.1f,manual=%2.1f), (x,y)=(%2d,%2d)\n',...
     h.dat.cl.selected(h.dat.F.ichosen),...
     h.dat.cl.manual(h.dat.F.ichosen),...
     x,y);
-fprintf('Compactness=%2.1f, npix=%d\n', h.dat.cl.statTBL.Compactness(h.dat.F.ichosen),...
-    h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+try
+    fprintf('Compactness=%2.1f, npix=%d\n', h.dat.cl.statTBL.Compactness(h.dat.F.ichosen),...
+        h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+catch
+    fprintf('Compactness=%2.1f, npix=%d\n', h.dat.cl.statTBL.Compactness{h.dat.F.ichosen},...
+        h.dat.cl.statTBL.npix{h.dat.F.ichosen});
+end
 fprintf('Skew(F)=%3.3f, ',h.dat.cl.statTBL.skewF(h.dat.F.ichosen));
-fprintf('Eccentricity=%3.3f, ',h.dat.cl.statTBL.Eccentricity(h.dat.F.ichosen));
-fprintf('Solidity=%3.3f, ',h.dat.cl.statTBL.Solidity(h.dat.F.ichosen));
-fprintf('meanV=%3.3f,',h.dat.cl.statTBL.V(h.dat.F.ichosen)/h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+try fprintf('Eccentricity=%3.3f, ',h.dat.cl.statTBL.Eccentricity(h.dat.F.ichosen));
+    fprintf('Solidity=%3.3f, ',h.dat.cl.statTBL.Solidity(h.dat.F.ichosen));
+    fprintf('meanV=%3.3f,',h.dat.cl.statTBL.V(h.dat.F.ichosen)/h.dat.cl.statTBL.npix(h.dat.F.ichosen));
+catch
+    fprintf('Eccentricity=%3.3f, ',h.dat.cl.statTBL.Eccentricity{h.dat.F.ichosen}); 
+    fprintf('Solidity=%3.3f, ',h.dat.cl.statTBL.Solidity{h.dat.F.ichosen});
+    fprintf('meanV=%3.3f,',h.dat.cl.statTBL.V{h.dat.F.ichosen}/h.dat.cl.statTBL.npix{h.dat.F.ichosen});
+end
+
 fprintf('manual label=%d\n',h.dat.cl.svm_class(h.dat.F.ichosen));
 
 
@@ -1395,10 +1528,11 @@ function h=update_figure(h)
 Mode = h.ModeSelectionButtonGroup.SelectedObject.Tag;
 
 switch Mode
-    case {'tg_DisplayMode','tg_ROISplitMode'}
+    case {'tg_DisplayMode','tg_ROISplitMode','tg_ROIMergeMode'}
         PlotHue = h.dat.cl.rands(h.dat.F.ichosen_append);
         PlotColor =permute(cat(2,PlotHue(:),ones(length(PlotHue),2)),[1,3,2]);
         PlotColor = hsv2rgb(PlotColor);
+        
         h=redraw_fluorescence_multi(h,PlotColor);
         
         h = buildSat(h);
@@ -1416,10 +1550,35 @@ switch Mode
         
     case 'tg_EllipseMode'
 %         h=add_imellipse_Callback(hObject, eventdata, h);
-    case 'tg_ROIMergeMode'
-        h=redraw_corrimg(h);
+%     case 'pb_ROIMergeMode'
+%         h=redraw_corrimg(h);
     case 'tb_SVMMode'
+%         unique(h.dat.cl.svm_class);
         PlotHue = h.dat.cl.rands(h.dat.F.ichosen_append);
+        PlotColor =permute(cat(2,PlotHue(:),ones(length(PlotHue),2)),[1,3,2]);
+        PlotColor = hsv2rgb(PlotColor);
+        
+%         
+%         hspace.unknown=[1 1 1]; % white
+%         hspace.soma=[0 0 1]; % red
+%         hspace.dendrite=[0 1 0]; % green;
+%         hspace.axon    =[1 0 0]; % blue;
+%         hspace.spine   =[0 1 1]; % yellow;
+%         hspace.noise=[0 0 0]; % red
+%         PlotHue=[hspace.unknown;...  %class label 0
+%                  hspace.soma;...    %1
+%                  hspace.dendrite;...%2
+%                  hspace.axon;...    %3
+%                  hspace.spine;...   %4
+%                  [1 0.5 0];... %  5
+%                  [0.5 0 0.5]; ...%6
+%                  [0 0.5 0.5]; ...%7
+%                  [0.2 0.5 0.8]; ...%8
+%                  hspace.noise]; %9
+%              
+%         Plot = PlotHue(h.dat.cl.svm_class+1,:);
+%         PlotHue = 
+        
         PlotColor =permute(cat(2,PlotHue(:),ones(length(PlotHue),2)),[1,3,2]);
         PlotColor = hsv2rgb(PlotColor);
         h=redraw_fluorescence_multi(h,PlotColor);
@@ -1586,8 +1745,10 @@ if isempty(h.dat.F.ichosen_append)
     else
         x_trace = [1:NT];
          if get(h.rb_showneuropil,'Value')
+             % neuropil subtracted 
               y_trace=my_conv_local(double(h.dat.F.truetrace(h.dat.F.ichosen,:)), 3);
          else
+             % raw fluorescence. 
               y_trace=my_conv_local(double(h.dat.F.trace(h.dat.F.ichosen,:)), 3);
          end
     end
@@ -1702,12 +1863,7 @@ else
     y_neurop = [];
     set(h.plot_fluorescence_baseF,'XData',NaN,'YData',NaN);
 end
-% y = double(h.dat.F.trace(h.dat.F.ichosen,:))';
-% x = [ones(length(y_neurop),1), y_neurop'];
-% % b=regress(y_trace,x);
-% b = x'*x\x'*y_trace';
-% Coef = 0.6;
-% newydata=y_trace-Coef*b(2)*y_neurop-b(1);
+
 if isempty(y_neurop)
     newydata = y_trace;
 else
@@ -1723,7 +1879,7 @@ dy = max_y-min_y;
 if dy==0,    dy=1;end
 yl(1) = min_y-0.1*dy;
 yl(2)=  max_y+0.1*dy;
-
+if any(isnan(yl)), yl=[0 1]; end
 set(h.axes_fluorescence,'XLim',[0 NT],'YLim',yl);
 
 guidata(h.axes_fluorescence,h);
@@ -2043,6 +2199,7 @@ switch Tag
        for ii=1:h.dat.ops.Nk
             %             h.dat.cellmask(h.dat.res.iclust1==h.dat.F.ichosen_append(ii))=1;
             edge_pix = h.dat.stat(ii).ipix_edge;
+            if isnan(edge_pix) continue; end
             type_index = find([h.dat.cl.type_number_table{:,1}]==h.dat.cl.svm_class(ii));
             HSV=rgb2hsv(h.dat.cl.type_number_table{type_index,3}); 
             if type_index~=1
@@ -2107,6 +2264,7 @@ switch Tag
         for ii=1:h.dat.ops.Nk
             %             h.dat.cellmask(h.dat.res.iclust==h.dat.F.ichosen_append(ii))=1;
             edge_pix = h.dat.stat(ii).ipix_edge;
+            if isnan(edge_pix), continue; end
             type_index = find([h.dat.cl.type_number_table{:,1}]==h.dat.cl.svm_class(ii));
             HSV=rgb2hsv(h.dat.cl.type_number_table{type_index,3}); 
             if type_index~=1
@@ -2155,6 +2313,7 @@ switch Tag
         for ii=1:h.dat.ops.Nk
             %             h.dat.cellmask(h.dat.res.iclust==h.dat.F.ichosen_append(ii))=1;
             edge_pix = h.dat.stat(ii).ipix_edge;
+            if isnan(edge_pix), continue; end
             type_index = find([h.dat.cl.type_number_table{:,1}]==h.dat.cl.svm_class(ii));
             HSV=rgb2hsv(h.dat.cl.type_number_table{type_index,3});
             
@@ -2368,7 +2527,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function merge_two_roi(hObject,eventdata,h)
 
 
 % --------------------------------------------------------------------
@@ -2412,10 +2570,12 @@ IEh=handles.dat.ImEllipseH;
 if isfield(handles.dat,'reg_data')
     % do nothing
 else
-     handles=local_loadmovie(hObject, eventdata, handles);
-     handles.dat.reg_data.get_single_slice(1);
+      
+        handles=local_loadmovie(hObject, eventdata, handles);
+        handles.dat.reg_data.get_single_slice(1);
+%   
 end
-  [H,W,D]=size(handles.dat.reg_data.buffer);
+[H,W,D]=size(handles.dat.reg_data.buffer);
   
   handles.dat.ImEllipse=[];
 cnt=1;
@@ -2442,7 +2602,7 @@ plot(1:D,[handles.dat.ImEllipse(:).F_Ellip]);
 guidata(hObject,handles);
 
 % --- Executes on button press in pb_DeleteEllipticROIs.
-function pb_DeleteEllipticROIs_Callback(hObject, eventdata, handles)
+function handles=pb_DeleteEllipticROIs_Callback(hObject, eventdata, handles)
 % hObject    handle to pb_DeleteEllipticROIs (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2491,14 +2651,20 @@ function uipanel46_ButtonDownFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in tg_ROIMergeMode.
-function tg_ROIMergeMode_Callback(hObject, eventdata, handles)
-% hObject    handle to tg_ROIMergeMode (see GCBO)
+% --- Executes on button press in pb_ROIMergeMode.
+function pb_ROIMergeMode_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_ROIMergeMode (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of tg_ROIMergeMode
+% Hint: get(hObject,'Value') returns toggle state of pb_ROIMergeMode
+if  get(hObject,'Value')
+    merge_rois(hObject,eventdata,h)
+end
 
+
+function merge_rois(hObject,eventdata,h)
+ROIs_to_merge=h.dat.F.ichosen_append
 
 % --- Executes on button press in tg_ROISplitMode.
 function tg_ROISplitMode_Callback(hObject, eventdata, handles)
@@ -2541,14 +2707,10 @@ switch Tag
         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('EllipseSelectionButtonDownFcn',...
             hObject,eventdata,guidata(hObject));
         set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
-         set(handles.uipanel_Left,'Title','EllipseMode');
-    case 'tg_ROIMergeMode'
+        set(handles.uipanel_Left,'Title','EllipseMode');
+%     case 'tg_ROIMergeMode' % merge is not considered as a mode. Merge already selected rois. 
+       
         
-        ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSelectionButtonDownFcn',...
-            hObject,eventdata,guidata(hObject));
-        set(handles.left_imageH,'ButtonDownFcn',ButtonDownFcn);
-        
-        handles=renew_cluster(handles);
     case 'tg_ROISplitMode'
         
         ButtonDownFcn=@(hObject,eventdata)RoiGui_007('CellSplitButtonDownFcn',...
@@ -2591,7 +2753,11 @@ IDXtmp = zeros(size(IDX));
 
 for ii=1:length(unique_cluster)
     ind = find(IDX==unique_cluster(ii));
-    [npix_max,npix_max_ind]=  max(h.dat.cl.statTBL.npix(ind));
+    npix=h.dat.cl.statTBL.npix(ind);
+    if iscell(npix)
+        npix=[npix{:}];
+    end
+    [npix_max,npix_max_ind]=  max(npix);
     IDXtmp(ind)= ind(npix_max_ind);
 end
 IDX = IDXtmp;
@@ -3146,7 +3312,21 @@ else
     loaded_teacher_data= [];
 end
 N_imported_data = length(loaded_labels);
-data = zscore(double(table2array(data)),0,1);
+data=double(table2array(data));
+
+do_padding_inf=1;
+if (do_padding_inf)
+    fprintf('padding inf...\n');
+    for ii=1:size(data,2)
+        tmp=data(:,ii);
+        infind=isinf(tmp);
+        tmpwoinf=tmp; tmpwoinf(infind)=[];
+        tmp(infind)=nanmean(tmpwoinf);
+        data(:,ii)=tmp;
+    end
+end
+
+data = nanzscore(data,0,1);
 
 % data= double(data(:,teacher_ind));
 
@@ -3159,7 +3339,7 @@ for cc=unique_classes(:)'
     h.dat.cl.svmmodel(cc).param = svmtrain(2*train_label(teacher_ind)-1,...
         data(teacher_ind,:), '-c 400 -g 0.01');
     
-    [predict_label, accuracy, dec_values] = svmpredict(randn(h.dat.ops.Nk+N_imported_data,1), ...
+    [predict_label, accuracy, dec_values] = svmpredict(randn(size(data,1),1), ...
         data,  h.dat.cl.svmmodel(cc).param); % test the training data
     
     h.dat.cl.svm_predicted_type(predict_label>0)=cc;
@@ -3486,3 +3666,73 @@ function tb_LabelMode_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of tb_LabelMode
+
+
+% --- Executes during object creation, after setting all properties.
+function rb_showneuropil_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to rb_showneuropil (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on button press in pb_Add_EllipticROI.
+function pb_Add_EllipticROI_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_Add_EllipticROI (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+IEh=handles.dat.ImEllipseH;
+
+unique_roi = unique(handles.dat.res.iclust1);
+nROI = max(unique_roi)+1;
+cnt=1;
+for ii=1:length(IEh)
+    if isobject(IEh(ii))
+%         nROI=nROI+1;
+        ROIMask=handles.dat.res.iclust1==1 & IEh(ii).createMask;
+        CC = bwconncomp(ROIMask);
+        [~,max_id] = max(cellfun(@length,CC.PixelIdxList));
+                  % here, pickup the largest ROI in case it was overlapping with the other ROI and 
+%                   ROI region was split.
+        ROIMask=handles.dat.res.iclust1;
+        ROIMask(CC.PixelIdxList{max_id})=nROI;
+        IEhpos=IEh(ii).getPosition;
+        IEhposX=round([IEhpos(1)-IEhpos(3),IEhpos(1)+2*IEhpos(3)]);IEhposX=[IEhposX(1):IEhposX(end)];
+        IEhposY=round([IEhpos(2)-IEhpos(4),IEhpos(2)+2*IEhpos(4)]);IEhposY=[IEhposY(1):IEhposY(end)];
+        opt.hue_range= [0.3 0.31];
+        opt.highlight_labels = nROI; % a vector of indices. ROI belongs to this indices are colored with opt.highlight_color.
+        opt.highlight_color = 1;
+        p=handles.dat.res.probabilities;
+        p(CC.PixelIdxList{max_id})=1;
+        IMG=ROI_gem_img(ROIMask,p,handles.dat.res.M0,opt);
+        CreateOrNot = ROISplit_GUI('title','ROI create',...
+            'String','Create',...
+            'CData',IMG(IEhposY,IEhposX,:),...
+            'PlotData',[NaN,NaN,NaN],...
+            'PlotData_Class',1);
+        switch CreateOrNot
+            case 'Create'
+                handles.dat.res.iclust1(CC.PixelIdxList{max_id})=nROI;
+                handles.dat.res.probabilities(CC.PixelIdxList{max_id})=0.9;
+                tmp= get_stat_from_iclust(handles.dat.res.iclust1==nROI,handles.dat.res.M);
+                tmp.skewF=inf;
+                tmp.SNratio=1;
+                handles.dat.stat(nROI)=tmp;
+                fprintf('iclust=%d is createdd\n',nROI);
+                 nROI=nROI+1;
+            case  'No, I change my mind'
+                  fprintf('User cancelled');
+            otherwise
+                error('Unknown answer %s',CreateOrNot);
+        end
+    end
+   
+end
+handles=update_cl(handles);
+new_ROIs=[(max(unique_roi)+1):length(handles.dat.cl.selected)];
+handles.dat.cl.selected(new_ROIs)=1;
+handles=pb_DeleteEllipticROIs_Callback(hObject, eventdata, handles);
+  handles = buildHue(handles);
+  handles = buildSat(handles);
+handles=redraw_figure(handles);
+guidata(hObject,handles);
