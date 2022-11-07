@@ -443,12 +443,13 @@ calc_signal(ops0,handles);
 %%%%%%%%% manual check  ROI %%%%%%%%
 % call Roi curating program (RoiGui)
 manual_roi(ops0,handles);
-
+% data is saved as 
+% Fsig_<mouse_name>_<date>_plane<#>_ch<#>_proc.mat
 
 %%%%%%%%% get signals for selected plane, view, channel %%%%%%%%
 % by using Proc file and registered Tiff computed above, 
 update_signal(ops0,handles);
-% Proc file is stored in
+% Proc file is overwritten in
 % Fsig_<mouse_name>_<date>_plane<#>_ch<#>_proc.mat
 
 toc(TSTART);
