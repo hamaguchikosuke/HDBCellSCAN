@@ -1,5 +1,8 @@
 function [F,info] = BigTiffReader(f,index,ind_i,ind_j,ShowProgressBar)
 % Tiff reader that can read more than 4GB Tiff file.
+% Note that this program can correctly read imageJ generated Tiff file,
+% and not guaranteed to read the other Tiff files. 
+% 
 % Usage:  [F,info] = BigTiffReader(f)
 % 
 % --- input ----
