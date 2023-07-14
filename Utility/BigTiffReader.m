@@ -95,19 +95,19 @@ else
 end
 
 
-if W~=H % non-square image, somehow failed to read. Reply on loadFramesBuff2
-    fprintf('non-square image: call loadFramesBuff2\n')
-    if nargin ~=~isempty(index)
-        firstIdx=index(1);
-        lastIdx = index(end);
-        stride = index(2)-index(1);
-    else
-        firstIdx = [];
-        lastIdx = [];
-        stride = [];
-    end
-    F=loadFramesBuff2(f,firstIdx, lastIdx, stride, ind_i,ind_j);
-else
+% if W~=H % non-square image, somehow failed to read. Rely on loadFramesBuff2
+%     fprintf('non-square image: call loadFramesBuff2\n')
+%     if nargin ~=~isempty(index)
+%         firstIdx=index(1);
+%         lastIdx = index(end);
+%         stride = index(2)-index(1);
+%     else
+%         firstIdx = [];
+%         lastIdx = [];
+%         stride = [];
+%     end
+%     F=loadFramesBuff2(f,firstIdx, lastIdx, stride, ind_i,ind_j);
+% else
     
 
 
@@ -140,7 +140,7 @@ if ShowProgressBar
 waitCnt = 0;
 waitH=waitbar(waitCnt,'Loading Tiffs ( / )...');
 end
-
+%%
 for ii = 1:length(index)
     
     if ShowProgressBar &&  ii/length(index)>=waitCnt
@@ -172,4 +172,4 @@ end
 
  fclose(fID);
 if ShowProgressBar, close(waitH); end
-end
+% end

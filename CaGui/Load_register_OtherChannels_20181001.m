@@ -3,7 +3,24 @@ function RegImg = Load_register_OtherChannels_20181001(h)
 % load('N:\home\ImagingData\DualLickMice\B6N1189_GC6s_redbPons_CTB647hM4DiRALM\20180921_d32\1_592um\ROI_B6N1189_GC6s_redbPons_CTB647hM4DiRALM_20180921_d32_plane1_Ch1_MinClust95.mat')
 
 % load('N:\home\ImagingData\DualLickMice\B6N1189_GC6s_redbPons_CTB647hM4DiRALM\20180927_d35\1_555um\ROI_B6N1189_GC6s_redbPons_CTB647hM4DiRALM_20180927_d35_plane1_Ch1_MinClust95.mat');
- ops= h.dat.ops;
+
+ops= h.dat.ops;
+
+[LoadPath,LoadName,Ext]=fileparts(ops.ProcFileName);
+FullRGBFile = fullfile(LoadPath,[LoadName,'_TracerOverlaid.mat']); 
+if exist(FullRGBFile,'file')
+    answer=questdlg(sprintf('Previously registered image found (%s). Load it?',FullRGBFile));
+   switch answer
+       case 'Yes'
+           fprintf('User selected to load previously registered data\n');
+               tmp=load(FullRGBFile,'RegImg');
+               RegImg=tmp.RegImg;
+               return;
+       otherwise
+            fprintf('User selected to register images from scratch\n');
+   end
+end
+    
 %% 
 MainPath =ops.RegTiffPath{1}; 
 PlaneChPath = sprintf('plane%d_ch%d',ops.PlaneID,ops.ChannelID);
@@ -13,41 +30,44 @@ FullTiffMoviePath = fullfile(TiffPath,S(1).name);
 
 
 % TiffMovie = 'plane1_ch1\x4movie\20180921_d32_1_592um_B6N1189_GC6s_redbPons_CTB647hM4DiRALM_2P_plane1_ch1_x4_005.tif';
-% try 
+% try
 %     RCy5Path = fullfile(MainPath,'CTB_redbeads');
 %     RCy5File    = 'AVG_B6N1189_20180921_830nm_FRCy5Max26.1x[0.5]dBm_A2.5L1.5[Ave].tif';
 % catch
-    [RCy5File,RCy5Path]=uigetfile(fullfile(MainPath,'*.*'),'Please select the file that contains red and far-red');
+[RCy5File,RCy5Path]=uigetfile(fullfile(MainPath,'*.*'),'Please select the file that contains red and far-red');
 % endh
-% try 
+% try
 %     GRPath = fullfile(MainPath,'CTB_redbeads');
 %     GRFile    = 'AVG_B6N1189_20180921_830nm_FGRMax26.1x[0.4]dBm_A2.5L1.5[Ave].tif';
 % catch
-    [GRFile,GRPath]=uigetfile(fullfile(RCy5Path,'*.*'),'Please select the file that contains green and red');
+[GRFile,GRPath]=uigetfile(fullfile(RCy5Path,'*.*'),'Please select the file that contains green and red');
 % end
-
-meanF =h.dat.graph.mimg(:,:,1);
+    
+meanF =h.dat.graph.mimg(:,:,2);
 RCy5F= BigTiffReader(fullfile(RCy5Path,RCy5File));
 GRF = BigTiffReader(fullfile(GRPath,GRFile));
 %% if RCy5F and GRF is 3D image,
-[W,H,Z]=size(RCy5F)
-if Z>1
-    Nch=2;
-    RCy5F=reshape(RCy5F,W,H,2,[]);
-end
-[dsnew, Corr]  = registration_offsets(RCy5F, ops, 1);
-RCy5F  = register_movie(RCy5F, ops, dsnew);
-
-[dsnew, Corr]  = registration_offsets(GRF, ops, 1);
-GRF  = register_movie(GRF, ops, dsnew);
+% [W,H,Z]=size(RCy5F);
+% if Z>1
+%     Nch=2;
+%     RCy5F=reshape(RCy5F,W,H,2,[]);
+% end
+% [dsnew, Corr]  = registration_offsets(RCy5F, ops, 1);
+% RCy5F  = register_movie(RCy5F, ops, dsnew);
+% 
+% [dsnew, Corr]  = registration_offsets(GRF, ops, 1);
+% GRF  = register_movie(GRF, ops, dsnew);
 
 %% now align to the mean F (reference and target) with Green,
 % then register Red using Green-Red combination image. 
 % And then, align Red-FarRed image to Red channel of Green-Red image. 
 
 [W,H,Nch1]=size(GRF);
-
-figh=myfigure('GRF');clf;
+AllFigsH=[];
+figh=myfigure('Green-Red');clf;AllFigsH=[AllFigsH,figh];
+screensize=get(0,'ScreenSize');
+WH=1000;WH=min([WH,screensize(3:4)]);
+set(figh,'Position',[0 screensize(4)-WH WH WH]);
 subplot(2,Nch1,1);
 imshow(meanF);title('Fixed target (Ca)');
 caxis('auto');
@@ -59,7 +79,7 @@ caxis('auto')
 end
 colormap gray
 %%
-prompt = {'Which channel data to align with fixed target?'};
+prompt = {'Align Ca data first. Select Ca image channel.'};
 dlg_title = 'Input';
 num_lines = 1;
 defaultans = {'1'};
@@ -95,7 +115,9 @@ end
 
 [W,H,Nch2]=size(RCy5F);
 
-figh=myfigure('RCy5F');clf;
+figh=myfigure('Red-Cy5');clf;AllFigsH=[AllFigsH,figh];
+set(figh,'Position',[0 screensize(4)-WH WH WH]);
+
 Fixed_and_moved = cat(3,meanF,GRF_moved(:,:,Unselected_Ch));
 
 subplot(2,Nch2,1);
@@ -109,13 +131,13 @@ caxis('auto');
 
 for ii=1:Nch2
 subplot(2,Nch2,Nch2+ii); 
-imshow(RCy5F(:,:,ii));title(sprintf('(%d)',ii));
+imshow(RCy5F(:,:,ii));title(sprintf('Moving(%d)',ii));
 caxis('auto')
 end
 colormap gray
-%%
+%% align Red-FarRed image to Red channel of Green-Red image. 
 
-prompt = {'Fixed Target Channel?','Moving channel?'};
+prompt = {'Which channel to use as a target from "Fixed Target"?','Which channel to use as Moving channel?'};
 dlg_title = 'Input';
 num_lines = 1;
 defaultans = {'1','2'};
@@ -128,14 +150,14 @@ selected_MovingCh=str2double(answer{2});
 Unselected_MovingCh = setdiff([1:Nch1],selected_MovingCh);
 
 Fixed = Fixed_and_moved(:,:,selected_FixedCh);
-Target = RCy5F(:,:,selected_Ch);
+Moving = RCy5F(:,:,selected_MovingCh);
 clf;
-imshowpair(Target, Fixed,'falsecolor','ColorChannels','red-cyan');
+imshowpair(Moving, Fixed,'falsecolor','ColorChannels','red-cyan');
 title('Before');
-
+drawnow;
 
 fprintf('Linear translation to match...\n')
-tform_RCy5 = imregtform(Target, Fixed, 'translation', optimizer, metric);
+tform_RCy5 = imregtform(Moving, Fixed, 'translation', optimizer, metric);
 fprintf('done\n');
 
 
@@ -143,17 +165,19 @@ fprintf('done\n');
 RCy5_moved=zeros([size(Fixed),Nch2]);
 
 for ii=1:size(GRF,3)
-    RCy5_moved(:,:,ii) = imwarp(RCy5F(:,:,ii),tform_FGR,'OutputView',imref2d(size(Fixed)));
+    RCy5_moved(:,:,ii) = imwarp(RCy5F(:,:,ii),tform_RCy5,'OutputView',imref2d(size(Fixed)));
 end
 
 Target_moved=RCy5_moved(:,:,selected_MovingCh);
 imshowpair(Target_moved, Fixed,'falsecolor','ColorChannels','red-cyan');
-
+title('Done');
 %%
-myfigure('GC6s_redbeads_CTB_movie');clf;
-set(gcf,'Position',[50 500 1050 200]);
+% figh=myfigure('GC6s_redbeads_CTB_movie');clf;
+
+% set(gcf,'Position',[50 500 1050 200]);
 
 figh=myfigure('RCy5 and GRF');clf;
+set(figh,'Position',[0 screensize(4)-WH/2 2*WH WH/2]);AllFigsH=[AllFigsH,figh];
 RGCy5Img_moved = cat(3,GRF_moved,RCy5_moved);
 
 for ii=1:size(RGCy5Img_moved,3)
@@ -174,36 +198,49 @@ blue_ch =str2double(answer{2});
 %%
 R=RGCy5Img_moved(:,:,red_ch);
 B=RGCy5Img_moved(:,:,blue_ch);
+G=meanF;
 
 r_max = max(R(:));
 r_bias =min(R(:));
 
-g_max = max(meanF(:));
-g_bias = min(meanF(:));
+g_max = max(G(:));
+g_bias = min(G(:));
 
 b_max = max(B(:));
 b_bias = min(B(:));
 
-maxRGB=max([r_max,g_max,b_max]);
-r_coef = 2*maxRGB/r_max;
-g_coef= 0.7*maxRGB/g_max;
-b_coef = 1.2*maxRGB/b_max;
+% maxRGB=max([r_max,g_max,b_max]);
+r_coef = 1/r_max;
+g_coef= 1/g_max;
+b_coef = 1/b_max;
 
 
 Composite=cat(3,...
-    r_coef*(RGCy5Img_moved(:,:,red_ch)+r_bias),...
-    g_coef*(uint16(meanF)+g_bias),...
-    b_coef*(RGCy5Img_moved(:,:,blue_ch))+b_bias);
+    r_coef*(R-r_bias),...
+    g_coef*(G-g_bias),...
+    b_coef*(B-b_bias));
 clf;
 imshow(Composite);
 title(sprintf('Overlaid %s',FullTiffMoviePath),'Interpreter','none','FontSize',7);
- FullTiffFile = fullfile(MainPath,'TracerOverlaied.tif');
+[SavePath,SaveName,Ext]=fileparts(ops.ProcFileName);
+
+ FullTiffFile = fullfile(SavePath,[SaveName,'_TracerOverlaid.tif']);
+ fprintf('Printing %s...\n',FullTiffFile);
+ print(gcf,'-dtiff',FullTiffFile);
+ 
+
  
  RegImg.R = R;
  RegImg.G = G;
  RegImg.B = B;
  RegImg.Ca= 2;
+ RegImg.Composite=Composite;
  
+ FullMATFile = fullfile(SavePath,[SaveName,'_TracerOverlaid.mat']);
+ save(FullMATFile,'RegImg');
+ 
+ 
+ delete(AllFigsH);
 %  TiffWriter(Composite,FullTiffFile,16);
 %% BackG = RedBeadsCTB;
 % clf;

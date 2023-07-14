@@ -36,6 +36,7 @@ if ~isfield(ops, 'newFile') % save new file '<name>_new.mat', otherwise
 end
 %%
 if UseProcFile
+    LoadPath = ops.RootStorage;
     LoadName = ops.ProcFileName;
     SaveName = LoadName;
 else
@@ -79,6 +80,8 @@ if UseProcFile == 1
     useCells = setdiff(1:length(data.cl.selected),find(BGind)); % >20201230. we analyze all the roi's data. This might change the behavior of the later process... 1 is always the background.
 else
     useCells = find([data.stat.igood]);
+    npix=arrayfun(@(x) length(x.ipix),data.stat);
+    BGind=npix>0.1* numel(data.res.M);
 end
 
 [LyU, LxU] = size(ops.mimg);
@@ -110,12 +113,18 @@ if ops.getNeuropil
     neuropMasks=createNeuropilMasks_MD(cellFields,allField,xPU,yPU,ops);
 
     mCell=0;
-    for k=useCells(:)'
-        mCell=mCell+1;
-        tmp=squeeze(neuropMasks(mCell,:,:));
-        data.stat(k).ipix_neuropil=find(tmp);
+    for k=1:length(data.stat)
+        if any(k==useCells)
+            mCell=mCell+1;
+            tmp=squeeze(neuropMasks(mCell,:,:));
+            data.stat(k).ipix_neuropil=find(tmp);
+        else
+            data.stat(k).ipix_neuropil=[];
+        end
     end
+    if ~isempty(find(BGind))
     data.stat(find(BGind)).ipix_neuropil=[];
+    end
 end
 
 

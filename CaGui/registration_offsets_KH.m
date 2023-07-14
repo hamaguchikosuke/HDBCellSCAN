@@ -124,7 +124,7 @@ for bi = 1:nBatches
     DefaultPhaseCorrBlurSTD=1.5;
     ConvSTD = getOr(ops, {'PhaseCorrBlurSTD'}, DefaultPhaseCorrBlurSTD);
     
-    if ConvSTD~=DefaultPhaseCorrBlurSTD, fprintf('%s=%d','PhaseCorrBlurSTD',ConvSTD); end
+    if ConvSTD~=DefaultPhaseCorrBlurSTD, fprintf('%s=%d\n','PhaseCorrBlurSTD',ConvSTD); end
     corrClipSmooth = my_conv2(corrClip, ConvSTD, [1 2]);
 %     corrClipSmooth = bsxfun(@times,corrClipSmooth,gmask_corr);
   

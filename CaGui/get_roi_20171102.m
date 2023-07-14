@@ -22,7 +22,9 @@ if ops1.getROIs
         case 'neuropil'
             
             ops1.diameter = getOr(ops1,'diameter',clustrules.diameter);
-            [ops1, stat, res]  = fastClustNeuropilCoef_kh(ops1,U, Sv); % save data in '%s/F_%s_%s_plane%d_Nk%d.mat'
+%             [ops1, stat, res]  = fastClustNeuropilCoef_kh(ops1,U, Sv); % save data in '%s/F_%s_%s_plane%d_Nk%d.mat'
+             [ops1, stat, res]  = fast_clustering_with_neuropil(ops1,U,Sv);
+              
     end
     
     non_empty_cluster = find([stat.npix]>0);

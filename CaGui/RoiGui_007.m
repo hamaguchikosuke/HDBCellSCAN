@@ -116,7 +116,7 @@ else
 end
 
 if isempty(LOADNAME)
-    [filename1,filepath1]=uigetfile(root, 'Select Data File');
+    [filename1,filepath1]=uigetfile(fullfile(root,'*.mat'), 'Select Data File');
     LOADNAME = fullfile(filepath1, filename1);
 end
 
@@ -2652,7 +2652,7 @@ function uipanel46_ButtonDownFcn(hObject, eventdata, handles)
 
 
 % --- Executes on button press in pb_ROIMergeMode.
-function pb_ROIMergeMode_Callback(hObject, eventdata, handles)
+function pb_ROIMergeMode_Callback(hObject, eventdata, h )
 % hObject    handle to pb_ROIMergeMode (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

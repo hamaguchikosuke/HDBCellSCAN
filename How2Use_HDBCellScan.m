@@ -1,6 +1,7 @@
 %% setup path to matlab and python
 % Please change the path accordingly.
 Path2Add={'C:\home\GitHub\HDBCellScan','C:\home\GitHub\suite2P','C:\home\GitHub\FromSuite2P'};
+% Path2Add={'C:\home\GitHub\HDBCellScan'};
 for ii=1:length(Path2Add)
     C=genpath(Path2Add{ii});
     C=strsplit(C,';'); 
@@ -22,13 +23,15 @@ end
 % such as       
 
 % python_path = 'C:\Users\hamag\.conda\envs\khtest\Lib\site-packages'; 
-python_path = 'C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages'
+
+% python_path = 'C:\Users\hammer\AppData\Local\conda\conda\envs\CaImaging\Lib\site-packages'
+python_path='c:\users\hammer\.conda\envs\py310\lib\site-packages'; % For python verson 3.10
 P = py.sys.path;
 append(P,python_path);
 
 %% First, setup database m-file 
 % edit('C:\home\GitHub\HDBCellScan\TestData\make_db_B6N792');
-%% Load the database m-file from master control 
+%% Load the database m-file fro m master control 
 HDBCellScan_Master_v03;  
 
     %% ==== Brief Instructions====

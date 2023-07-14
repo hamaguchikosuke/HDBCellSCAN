@@ -261,6 +261,7 @@ for kk = 1:length(fs) % For each SubDir
                     
                     if cc==Ref_channel
                         [ops1,data,dsall] = partial_reg(ops,ops1,cc,scan_index,iplane0);
+                        subplot(122);plot(dsall(:,1),dsall(:,2),'.-');
                     else        
                         data = BigTiffReader(ops.temp_tiff, scan_index);
                     end
@@ -432,7 +433,7 @@ end
 
     %%
     function [ops1,data,dsall] = partial_reg(ops,ops1,ch_to_align,scan_index,iplane0)
-    
+    %%
     NumPlanes = length(ops.planesToProcess);
     nplanes             = getOr(ops, {'nplanes'}, 1);
 
@@ -443,6 +444,7 @@ end
     if BiDiPhase
         data = ResonanceImagingPhaseShifter(data,BiDiPhase);
     end
+   
     
     % get the registration offsets
     dsall = zeros(size(data,3), 2, ops.NumSplitViews);
@@ -451,6 +453,7 @@ end
         indframes = ifr0:nplanes:size(data,3);
         
         for ll = 1:ops.NumSplitViews
+            %  a mechanism to work on a subregion of the image 
             dat = data(ops.yFOVs(:,ll),ops.xFOVs(:,ll),indframes);
             if ~isempty(ops.smooth_time_space)
                 dat = smooth_movie(dat, ops);

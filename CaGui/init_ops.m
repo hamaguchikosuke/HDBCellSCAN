@@ -44,8 +44,8 @@ ops0.IMGLogScaling          = 0; % default is false. When true, IMG = log(IMG+1)
 ops0.clustModel             = 'HDBCellScan'; % The fastest hierachical density based cell scan approach (using python internally), by KH 20171102.
 ops0.neuropilSub            = 'surround'; % none, surround or model
 ops0.ShowCellMap            = 1; % during optimization, show a figure of the clusters
-ops0.Nk0                    = 100; % how many clusters to start with
-ops0.Nk                     = 26;  % how many clusters to end with (before anatomical segmentation)
+ops0.Nk0                    = 500; % how many clusters to start with
+ops0.Nk                     = 250;  % how many clusters to end with (before anatomical segmentation)
 ops0.sig                    = getOr(ops0,{'sig'},1.15);  % spatial smoothing length in pixels; encourages localized clusters
 
 % -- how many (binned) timepoints to do the SVD based on. When the total frame is 30,000, and NavgFramesSVD = 5000,

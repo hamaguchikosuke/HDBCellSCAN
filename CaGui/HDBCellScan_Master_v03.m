@@ -509,6 +509,11 @@ end
 
 function ops1 = update_roi(ops0,handles)
 %%%%%%%%% get ROIs for selected plane, view, and channel %%%%%%%%
+
+% update the following: handles.DB.ops.selected_analysis_ver 
+handles=popup_Methods_Callback(handles.popup_Methods, [], handles);
+
+    
 PlaneChString = get(handles.lb_PlaneCh,'String');
 PlaneChString =  PlaneChString(get(handles.lb_PlaneCh,'Value'));
 
@@ -539,7 +544,23 @@ if  get(handles.rb_GetRoi,'Value') && ...
        ops1{pp}.ChannelID=tmp.ops.ChannelID;
        ops1{pp}.PlaneID=tmp.ops.PlaneID;
        roi_start =tic;
-       ops1{pp} = get_roi_20171102(ops1{pp},tmp.U,tmp.Sv,handles.DB.clustrules);
+       switch handles.DB.ops.selected_analysis_ver
+           case 'ver20171103'
+              ops1{pp} = get_roi_20171102(ops1{pp},tmp.U,tmp.Sv,handles.DB.clustrules);
+           case 'Suite2P_2016'
+               ops_tmp=ops1{pp};
+               ops_tmp.diameter = getOr(ops_tmp,'diameter',handles.DB.clustrules.diameter);
+               ops_tmp.iplane = getOr(ops_tmp,'iplane',1);
+               ops_tmp.Nk0=500;
+               ops_tmp.Nk=250;
+               ops_tmp.clustModel='neuropil';
+               ops1{pp} = get_roi_20171102(ops_tmp,tmp.U,tmp.Sv,handles.DB.clustrules);
+%               [ops1{pp}, stat, res]  = fast_clustering_with_neuropil(ops_tmp,tmp.U,tmp.S);
+              
+           otherwise
+               error('Unknown Method %s',handles.DB.ops.selected_analysis_ver );
+       end
+      
        fprintf('ROI computation time: %fsec\n',toc(roi_start));
     end
 
@@ -548,6 +569,8 @@ end
 function ops1 = calc_signal(ops0,handles)
 %%%%%%%%% get signals for selected plane, view, channel %%%%%%%%
 % by using ROI file and registered Tiff computed above two. 
+% update the following: handles.DB.ops.selected_analysis_ver 
+handles=popup_Methods_Callback(handles.popup_Methods, [], handles);
 
 PlaneChString = get(handles.lb_PlaneCh,'String');
 PlaneChString =  PlaneChString(get(handles.lb_PlaneCh,'Value'));
@@ -558,10 +581,19 @@ if  get(handles.rb_GetSignal,'Value') && ...
         
        ops1 = [];
   for pp=1:length(PlaneChString)
-        MinClustSize = handles.DB.clustrules.MinClust;
-        ROIFile = sprintf('%s/ROI_%s_%s_%s_MinClust%d.mat', ops0.ResultsSavePath, ...
-            ops0.mouse_name, ops0.date, PlaneChString{pp},MinClustSize);
-       
+      
+      switch handles.DB.ops.selected_analysis_ver
+          case 'ver20171103'
+              MinClustSize = handles.DB.clustrules.MinClust;
+              ROIFile = sprintf('%s/ROI_%s_%s_%s_MinClust%d.mat', ops0.ResultsSavePath, ...
+                  ops0.mouse_name, ops0.date, PlaneChString{pp},MinClustSize);
+          case 'Suite2P_2016'
+                ops0.iplane = getOr(ops0,'iplane',1);
+              ROIFile=sprintf('%s/F_%s_%s_plane%d_Ch1_Nk%d.mat', ops0.ResultsSavePath, ...
+                  ops0.mouse_name, ops0.date, ops0.iplane, ops0.Nk);
+          otherwise
+              error('Unknown option');
+      end
         
         if exist(ROIFile,'file')
             fprintf('Loading ROI file: %s\n', ROIFile);
@@ -619,7 +651,8 @@ if  get(handles.rb_ManualROI,'Value') && ...
             fprintf('Please load Fsig file: %s\n', FsigFile);
 %             pb_LoadPlane_Callback(hObject, eventdata, h,varargin)
             h=guidata(RoiGui_007);
-            RoiGui_007('pb_LoadPlane_Callback',h.figure1,[],h,FsigFile);
+%             RoiGui_007('pb_LoadPlane_Callback',h.figure1,[],h,FsigFile);
+            RoiGui_008('pb_LoadPlane_Callback',h.figure1,[],h,FsigFile);
             % <To Dos>: load Fsig file automatically.
             
         else
@@ -645,12 +678,20 @@ if  get(handles.rb_FinalizeSignal,'Value') && ...
        
   for pp=1:length(PlaneChString)
       MinClustSize = handles.DB.clustrules.MinClust;
+      
       ProcFile = fullfile(ops0.ResultsSavePath,...
           sprintf('Fsig_%s_%s_%s_MinClust%d_proc.mat',ops0.mouse_name, ops0.date, PlaneChString{pp},MinClustSize));
       ProcSpkFile = fullfile(ops0.ResultsSavePath,...
           sprintf('Fsig_%s_%s_%s_MinClust%d_procSpk.mat', ops0.mouse_name, ops0.date, PlaneChString{pp},MinClustSize));
      
+     % This ProcFile could depend on older MinClust parameter, in that case, failed to find the current ProcFile.
+     % Use ops0.ProcFile 
       
+     if ~exist(ProcFile,'file') && exist(fullfile(ops0.ResultsSavePath,ops0.ProcFile),'file')
+         ProcFile=fullfile(ops0.ResultsSavePath,ops0.ProcFile);
+     end
+         
+          
       if exist(ProcFile,'file') & handles.rb_updateSpikeOnly.Value
        
           % In case update (ProcSpkFile already exists but overwrite)
