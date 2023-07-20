@@ -22,6 +22,7 @@ FileName=[];
 
 % FilePath = 'DirectoryPathToWhereYourDataExist';
 FilePath = 'C:\Users\hammer\Desktop\209_RVG_rC26dG1-3n7-916-jGCaMP8f';
+
 FileName{1}=fullfile(FilePath,'B6N3246_jG8f\20230616_1week\1_A2.5_L1.5_d300\Fsig_B6N3246_jG8f_20230616_1week_plane1_ch1_MinClust79_procSpk.mat');
 FileName{2}=fullfile(FilePath,'B6N3246_jG8f\20230707_4week\1_A2.5_L1.5_d300\Fsig_B6N3246_jG8f_20230707_4week_plane1_ch1_MinClust79_procSpk.mat');
 
@@ -36,10 +37,15 @@ FileName{1}=fullfile(FilePath,'B6N3249_jG8m\20230626_1w\1_A2.5_L1.4_d500\Fsig_B6
 FileName{2}=fullfile(FilePath,'B6N3249_jG8m\20230717_4w\1_A2.5_L1.4_d500\Fsig_B6N3249_jG8m_20230717_4w_plane1_ch1_MinClust79_procSpk.mat');
 
 
+% B6N3249_jG8m, depth 500
+FilePath = 'F:\kh018\home\ImagingData\InoueRabies\#210_RVG_rC26dG1-3n7-916-jGCaMP8m\';
+FileName{1}=fullfile(FilePath,'B6N3249_jG8m\20230626_1w\1_A2.5_L1.4_d500\Fsig_B6N3249_jG8m_20230626_1w_plane1_ch1_MinClust79_procSpk.mat');
+FileName{2}=fullfile(FilePath,'B6N3249_jG8m\20230717_4w\1_A2.5_L1.4_d500\Fsig_B6N3249_jG8m_20230717_4w_plane1_ch1_MinClust79_procSpk.mat');
+
 % B6N3250_jG8m, depth 500
 FilePath = 'F:\kh018\home\ImagingData\InoueRabies\#210_RVG_rC26dG1-3n7-916-jGCaMP8m\';
 FileName{1}=fullfile(FilePath,'B6N3250_jG8m\20230626_1w\1_A2.6_L1.5_d500\Fsig_B6N3250_jG8m_20230626_1w_plane1_ch1_MinClust79_procSpk.mat');
-FileName{2}=fullfile(FilePath,'B6N3250_jG8m\20230717_4w\1_A2.6_L1.5_d500\Fsig_B6N3250_jG8m_20230717_4w_plane1_ch1_MinClust79_procSpk.mat');
+FileName{2}=fullfile(FilePath,'B6N3250_jG8m\20230717_4w\1_A2.6_L1.5_d500\Fsig_B6N3250_jG8m_20230717_4w_plane1_ch1_MinClust79_procSpk');
 
 % MeanActivity1w={};
 MeanActivity={};
@@ -71,7 +77,7 @@ figure(2);clf;
 yshift=0;
 shiftsize=2;
 
-GoodThreshold = 6;
+GoodThreshold = 8;
 GoodThresholdMax = inf;
 for ii=1:2
     GoodOnes=MeanActivity{ii}>GoodThreshold & MeanActivity{ii}<GoodThresholdMax;
