@@ -49,7 +49,7 @@ HDBCellScan_Master_v03;
 %   Inspect the quality of automatically found ROIs. 
 %   Teach the program which ROIs are cell bodies, and which are noises,
 %   dendrites.
-%   Split an ROI into two if necessary.
+%   Split an ROI into two if necessary.ssa
 % (5): Finalize the signal (F) and estimate spikes using equivalent algorithm of fast-oopsi. 
 % 
 % First, press [Load DB] button to load make_db_B6N792.m located under TestData. 
