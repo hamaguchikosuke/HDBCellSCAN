@@ -8,7 +8,17 @@ end
 
 Ly = ops.Ly;
 Lx = ops.Lx;
-bitspersamp = 16;
+switch datatype
+    case 'uint8'
+        bitspersamp = 8;
+    case 'uint16'
+        bitspersamp = 16;
+    case 'uint32'
+        bitspersamp = 32;
+    otherwise
+        error('Unknown datatype %s',datatype);
+end
+
 
 frewind(fid);
 for k = 1:length(ops.SubDirs)
@@ -34,6 +44,6 @@ for k = 1:length(ops.SubDirs)
             ops.mouse_name, subfolder, ix);
         fname = fullfile(foldr, partname);
         
-        TiffWriter2(uint16(data),fname,bitspersamp,'w');
+        TiffWriter2(feval(datatype,data),fname,bitspersamp,'w');
     end
 end

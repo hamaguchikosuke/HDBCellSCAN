@@ -550,7 +550,7 @@ if  get(handles.rb_GetRoi,'Value') && ...
        roi_start =tic;
        switch handles.DB.ops.selected_analysis_ver
            case 'ver20171103'
-              ops1{pp} = get_roi_20240304(ops1{pp},tmp.U,tmp.Sv,handles.DB.clustrules);
+              ops1{pp} = get_roi_20171102(ops1{pp},tmp.U,tmp.Sv,handles.DB.clustrules);
            case 'Suite2P_2016'
                ops_tmp=ops1{pp};
                ops_tmp.diameter = getOr(ops_tmp,'diameter',handles.DB.clustrules.diameter);

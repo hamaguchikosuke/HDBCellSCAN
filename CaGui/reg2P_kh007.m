@@ -242,7 +242,9 @@ for kk = 1:length(fs) % For each SubDir
         StartFrames =1+[0:nChunk:nChunk*(nSteps-1)];
         EndFrames   = [nChunk:nChunk:nChunk*nSteps];
         EndFrames(end)=min(nFr,EndFrames(end));
-        
+        if nFr==1
+            error('nFrame=1, which is very weird. Are you analyzing Ca imaging movie? Please check Tiff is correctly converted.');
+        end
         for ss=1:nSteps
             % Because the data is read as a chunk, starting position is not
             % always plane 1. 
@@ -337,6 +339,7 @@ end
    %%
     for ii = 1:numel(ops1)
         ops1{ii}.mimg1 = ops1{ii}.mimg1/sum(ops1{ii}.Nframes);
+        ops1{ii}.datatype=datatype;
     end
     
     %% register all the Ca images. 
@@ -377,7 +380,7 @@ end
                     if p == parts
                         toRead = sum(ops1{ii}.Nframes) - 2000 * (parts-1);
                     end
-                    data = fread(fid{ii},  sz*toRead, '*int16');
+                    data = fread(fid{ii},  sz*toRead, datatype);
                     fwrite(fidCopy, data, class(data));
                 end
                 fclose(fidCopy);
@@ -400,6 +403,7 @@ end
         if ops.doRegistration && (ops1{ii}.IsRefChannel)
             minDs = min(ops1{ii}.DS(2:end, [1 2]), [], 1);
             maxDs = max(ops1{ii}.DS(2:end, [1 2]), [], 1);
+            
             disp([minDs(1) maxDs(1) minDs(2) maxDs(2)]);
             if ops.BiDiPhase>0
                 maxDs(2) = max(1+ops.BiDiPhase, maxDs(2));
@@ -407,8 +411,8 @@ end
                 minDs(2) = min(ops.BiDiPhase, minDs(2));
             end
             
-            ops1{ii}.yrange = ceil(maxDs(1)):floor(ops1{ii}.Ly+minDs(1));
-            ops1{ii}.xrange = ceil(maxDs(2)):floor(ops1{ii}.Lx+minDs(2));
+            ops1{ii}.yrange = ceil(max(1,maxDs(1))):floor(ops1{ii}.Ly+minDs(1));
+            ops1{ii}.xrange = ceil(max(1,maxDs(2))):floor(ops1{ii}.Lx+minDs(2));
         else
             ops1{ii}.yrange = 1:Ly;
             ops1{ii}.xrange = 1:Lx;

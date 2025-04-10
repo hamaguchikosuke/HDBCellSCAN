@@ -63,6 +63,8 @@ set(handles.figure1,'Visible','on')
 % with existing figure properties.  See the output of set(figure) for
 % a list of figure properties.
 IconData=[];
+yes_button_text='Split';
+handles.pb_YES.String=yes_button_text;
 if(nargin > 3)
     for index = 1:2:(nargin-3),
         if nargin-3==index, break, end
@@ -71,18 +73,24 @@ if(nargin > 3)
                 set(hObject, 'Name', varargin{index+1});
             case 'string'
                 set(handles.pb_YES, 'String', varargin{index+1});
+                yes_button_text=varargin{index+1};
             case 'cdata'
                 IconData = varargin{index+1};
             case 'plotdata'
                 PlotData = varargin{index+1};
             case 'plotdata_class'
                 PlotData_Class = varargin{index+1};
+            case 'yes_button_text'
+                yes_button_text=varargin{index+1};
+
             otherwise
                 error('unknown option %s',lower(varargin{index}))
         end
     end
 end
 
+
+handles.pb_YES.String=yes_button_text;
 % Determine the position of the dialog - centered on the callback figure
 % if available, else, centered on the screen
 FigPos=get(0,'DefaultFigurePosition');
@@ -133,18 +141,21 @@ set(handles.axes_Image, ...
     'YLim'   , get(Img,'YData')  ...
     );
 
-axis(handles.axes_Plot3d);
-Nlabel =unique(PlotData_Class);
-Col = {'r','g','b','c','y','p'};
-
-for ii=Nlabel(:)'
-     pind=find(PlotData_Class==ii);
-     plotH(ii)=plot3(PlotData(pind,1),PlotData(pind,2),PlotData(pind,3),[Col{ii},'.']);hold on;
+if ~isempty(yes_button_text)
+    axis(handles.axes_Plot3d);
+    Nlabel =unique(PlotData_Class);
+    Col = {'r','g','b','c','y','p'};
+    
+    for ii=Nlabel(:)'
+         pind=find(PlotData_Class==ii);
+         plotH(ii)=plot3(PlotData(pind,1),PlotData(pind,2),PlotData(pind,3),[Col{ii},'.']);hold on;
+    end
+     grid on;
+    % Make the GUI modal
+    set(handles.figure1,'WindowStyle','modal','Visible','on')
+else
+    handles.axes_Plot3d.Visible='off';
 end
- grid on;
-% Make the GUI modal
-set(handles.figure1,'WindowStyle','modal','Visible','on')
-
 % UIWAIT makes ROISplit_GUI wait for user response (see UIRESUME)
 uiwait(handles.figure1);
 

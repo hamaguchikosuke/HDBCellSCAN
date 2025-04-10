@@ -37,8 +37,13 @@ end
 %%
 if UseProcFile
     LoadPath = ops.RootStorage;
-    LoadName = ops.ProcFileName;
+    [~,LoadName,ext]=fileparts(ops.ProcFileName);
+    LoadPath2=strsplit(ops.ProcFileName,filesep);
+    LoadName=fullfile(LoadPath,LoadPath2{end-3:end-1},[LoadName,ext]);
+   
+%     LoadName = ops.ProcFileName;
     SaveName = LoadName;
+   
 else
     LoadName = ops.ROISaveFile;
     SaveName = strrep(LoadName,'ROI','Fsig');
@@ -94,12 +99,12 @@ cellFields=zeros(length(useCells),LyR,LxR);
 % figure(1001);clf;
 for ii=1:length(useCells)
     ipix=data.stat(useCells(ii)).ipix;
-%     temp=zeros(LyR,LxR);
-%     temp(ipix)=1;
-%     imagesc(temp); title(num2str(ii)); pause; 
-if ipix>0
-    cellFields(ii,ipix)=1; % fast data filling 
-end
+    %     temp=zeros(LyR,LxR);
+    %     temp(ipix)=1;
+    %     imagesc(temp); title(num2str(ii)); pause;
+    if ipix>0
+        cellFields(ii,ipix)=1; % fast data filling
+    end
 end
  allField=squeeze(sum(cellFields,1));
 ops.totPixels=LxU;
@@ -114,13 +119,17 @@ if ops.getNeuropil
 
     mCell=0;
     for k=1:length(data.stat)
+     
         if any(k==useCells)
             mCell=mCell+1;
             tmp=squeeze(neuropMasks(mCell,:,:));
             data.stat(k).ipix_neuropil=find(tmp);
         else
             data.stat(k).ipix_neuropil=[];
-        end
+        end    
+%             tmp=squeeze(neuropMasks(mCell,:,:));
+%             data.stat(k).ipix_neuropil=find(tmp);
+
     end
     if ~isempty(find(BGind))
     data.stat(find(BGind)).ipix_neuropil=[];

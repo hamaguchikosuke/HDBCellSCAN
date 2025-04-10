@@ -19,7 +19,7 @@ function [n,C,P]=deconv_kh_003(F,varargin)
 % Fmin = min(F);
 % Fmax = max(F);
 % F = (F-Fmin)/(Fmax-Fmin);
-% [n,C,P]=deconv_kh_002(F);
+% [n,C,P]=deconv_kh_003(F);
 % plot(F,'c'); hold on; plot(P.alp*C+P.bet,'b'); plot(n,'k');
 % 
 %%

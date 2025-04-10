@@ -28,6 +28,7 @@ nimgbatch = nt0 * floor(2000/nt0);
 
 fprintf('To calculate SVD, %2.0d frames are averaged\n',nt0);
 ops.nSVDforROI   = min(1000,ops.NavgFramesSVD);
+datatype=getOr(ops,'datatype','uint16');
 
 if nargin<2 
     ix = 0;
@@ -36,7 +37,9 @@ if nargin<2
     mov = zeros(Ly, Lx, ops.NavgFramesSVD, 'single');
     
     while 1
-        data = fread(fid,  Ly*Lx*nimgbatch, '*int16');
+%         data = fread(fid,  Ly*Lx*nimgbatch, '*int16');
+          data = fread(fid,  Ly*Lx*nimgbatch, datatype);
+
         if isempty(data)
             break;
         end
@@ -53,9 +56,9 @@ if nargin<2
         
         data = reshape(data, Ly, Lx, nt0, []);
         davg = single(squeeze(mean(data,3)));
-        
+        assert(~any(isnan(data(:))))
         mov(:,:,ix + (1:size(davg,3))) = davg;
-        
+        assert(~any(isnan(mov(:))))
         ix = ix + size(davg,3);
     end
     fclose(fid);
@@ -107,13 +110,14 @@ if ops.sig>0.05
 	for i = 1:size(mov,3)
 	   I = mov(:,:,i);
 	   I = my_conv2(I, ops.sig, [1 2]); %my_conv(my_conv(I',ops.sig)', ops.sig);
+       assert(~any(isnan(I(:))))
 	   mov(:,:,i) = I;
 	end
 end
 
 mov             = reshape(mov, [], size(mov,3));
 sdmov           = mean(mov.^2,2).^.5;
-mov             = mov./repmat(sdmov, 1, size(mov,2));
+mov             = mov./repmat(sdmov+eps, 1, size(mov,2));
 COV             = mov' * mov/size(mov,1);
 
 % ops.nSVDMax = 100;

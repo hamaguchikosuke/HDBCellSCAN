@@ -14,6 +14,11 @@ function ops = update_ops(ops_new,ops_old,varargin)
 % ops_right.var3=3;
 % ops=update_ops(ops_left,ops_right,'use_left')
 % ops=update_ops(ops_left,ops_right,'use_right')
+% 
+% ex) new option: 'use_left_if_property_exist_in_right'
+% ops is defined by default opt_right, but updated if the same property exists in left. 
+% usage: ops=update_ops(ops_left,ops_right,'use_left_if_property_exist_in_right');
+% 
 
 
 if nargin>=3
@@ -37,7 +42,12 @@ switch opt
         for ii=1:length(FN_only_in_new)
             ops.(FN_only_in_new{ii})=ops_new.(FN_only_in_new{ii});
         end
-        
+    case 'use_left_if_property_exist_in_right'
+        FN_in_common = intersect(FN_new,FN_old);
+        ops = ops_old;
+        for ii=1:length(FN_in_common)
+            ops.(FN_in_common{ii})=ops_new.(FN_in_common{ii});
+        end
     otherwise
         error('Unknown option %s!',opt);
 end
